@@ -1,0 +1,269 @@
+---
+title: "STAT 420 HW1"
+author: "Jung Hyun Hwang"
+date: '2020 2 5 '
+output:
+  html_document:
+    theme: readable
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+## Exercise 1 (Working with vectors)
+
+**(a)** Calculate the sample mean of `x` *without* the use of `mean()`, `sd()`, `sum()`, or `+`. Hint: Recall that vectors in `R` are column vectors. (Although when you display them, they often *look* like row vectors.) You may need to create a second vector, which is allowed, and should also look into the function `crossprod()`. Essentially, you need to use matrix algebra to recreate the formulas above. You may use `mean()` to check your answer.
+
+```{r}
+x = c(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
+y = rep(1, length(x))
+mean = crossprod(x, y) / length(x)
+print(mean)
+
+print(mean(x))
+```
+
+**(b)** Calculate the sample standard deviation of `x` *without* the use of `mean()`, `sd()`, `sum()`, or `+`. You may use `sd()` to check your answer.
+
+```{r}
+dev = x - as.vector(mean)
+sd = sqrt((1 / (length(x) - 1)) * crossprod(dev, dev))
+print(sd)
+
+print(sd(x))
+```
+
+## Exercise 2 (Vectors and Matrices)
+
+**(a)** Create five vectors `x0`, `x1`, `x2`, `x3`, and `y`. Each should have a length of 30 and store the following:
+
+- `x0`: Each element should be the value `1`.
+- `x1`: The first 30 square numbers, starting from `1` (so `1`, `4`, `9`, etc.)
+- `x2`: 30 evenly spaced numbers between `0` and `1`. (Including `0` and `1`. It may help to read the documentation for `seq()`.)
+- `x3`: The natural log of the integers from `1` to `30`
+- `y`: The result of running the following code, after creating the other four vectors:
+
+```{r}
+set.seed(114)
+x0 = rep(1, 30)
+x1 = (1:30) ^ 2
+x2 = seq(0, 1, length.out = 30)
+x3 = log(1:30)
+y  = 5 * x0 + 1 * x1 + 6 * x2 + 3 * x3 + rnorm(n = 30, mean = 0 , sd = 1)
+
+sum(y)
+```
+
+(b) Create a matrix X which stores x0, x1, x2, and x3 as columns of the matrix. Report the value returned
+from sum(X).
+
+```{r}
+X = cbind(x0, x1, x2, x3)
+sum(X)
+```
+
+**(c)** Use matrix operations to create a new matrix `beta_hat` defined as follows:
+
+Report the values stored in the matrix `beta_hat`. Note that you can use the vector `y` as if it is a $30 \times 1$ matrix.
+
+```{r}
+beta_hat = solve(t(X) %*% X) %*% t(X) %*% y
+beta_hat  
+```
+
+**(d)** Your `beta_hat` should store a $4 \times 1$ matrix. That is, a matrix with $4$ rows and $1$ column. Subset this matrix to exclude the first row, then square each element and report the sum of these results.
+
+```{r}
+sum(beta_hat[-1, ]^2)
+```
+
+**(e)** Create a new variable `y_hat` which stores the result of the matrix operation,
+
+\[
+\hat{y} = X \hat{\beta}.
+\]
+
+The result will be a $30 \times 1$ matrix. Perform and report the result of the following operation,
+
+\[
+\sum_{i = 1}^{30} (y_i - \hat{y}_i)^ 2.
+\]
+
+```{r}
+y_hat = X %*% beta_hat
+sum((y - y_hat)^2)
+```
+
+## Exercise 3 (Discrete Prob)
+
+**(a)** What is the probability that exactly 5 of the voters are Johnson supporters?
+
+```{r}
+dbinom(5, 50, 0.12)
+```
+
+
+**(b)** What is the probability that 10 or fewer voters are Johnson supporters?
+
+```{r}
+pbinom(10, 50, 0.12)
+```
+
+
+**(c)** What is the probability that 37 or more voters are **not** Johnson supporters?
+
+```{r}
+pbinom(13, 50, 0.12)
+```
+
+
+**(d)** What is the probability that between 3 and 9 (inclusive) voters are Johnson supporters?
+
+```{r}
+sum(dbinom(3:9, 50, 0.12))
+```
+
+## Exercise 4 (Continuous Probability)
+
+\[
+X \sim N\left(\mu = 120, \sigma^2 = 225\right).
+\]
+
+**(a)** Calculate $P(X < 95)$.
+```{r}
+pnorm(95, 120, 15)
+```
+
+**(b)** Calculate $P(X > 140)$.
+```{r}
+pnorm(140, 120, 15, FALSE)
+```
+
+
+**(c)** Calculate $P(95 < X < 120)$.
+```{r}
+diff(pnorm(c(95, 120), 120, 15))
+```
+
+**(d)** Find $q$ such that $P(X < q) = 0.05$.
+```{r}
+qnorm(0.05, 120, 15)
+```
+
+
+**(e)** Find $q$ such that $P(X > q) = 0.10$.
+```{r}
+qnorm(0.10, 120, 15, FALSE)
+```
+
+## Exercise 5 (Packages, Plotting)
+
+**(a)** Install and load the `faraway` package. **Do not** include the install command in your .Rmd file. (If you do it will install the package every time you knit your file.) **Do** include the command to load the package into your environment.
+```{r}
+library(faraway)
+```
+
+**(b)** How many observations are in this dataset? How many variables?
+```{r}
+dim(diabetes)
+
+print('There are 403 observations and 19 variables.')
+```
+
+**(c)** What are the names of the variables in this dataset?
+```{r}
+names(diabetes)
+```
+
+
+**(d)** What is the mean [HDL](https://en.wikipedia.org/wiki/High-density_lipoprotein) level (High Density Lipoprotein) of individuals in this sample?
+```{r}
+mean(diabetes$hdl, na.rm = TRUE)
+```
+
+**(e)** What is the standard deviation total cholesterol of individuals in this sample?
+```{r}
+sd(diabetes$chol, TRUE)
+```
+
+
+**(f)** What is the range of ages of individuals in this sample?
+```{r}
+range(diabetes$age)
+```
+
+
+**(g)** What is the mean HDL of females in this sample?
+```{r}
+mean(diabetes$hdl[diabetes$gender == 'female'])
+```
+
+
+**(h)** Create a scatterplot of HDL (y-axis) vs weight (x-axis). Use a non-default color for the points. (Also, be sure to give the plot a title and label the axes appropriately.) Based on the scatterplot, does there seem to be a relationship between the two variables? Briefly explain.
+```{r}
+plot(hdl ~ weight, data = diabetes,
+     ylab = 'HDL (mg/dL',
+     xlab = 'weight(lbs)',
+     col = 'blue',
+     main = 'HDL vs weight',
+     pch = 20,
+     cex = 2)
+```
+
+As weight increases, there is a slight decrease in HDL.
+
+**(i)** Create a scatterplot of total cholesterol (y-axis) vs weight (x-axis). Use a non-default color for the points. (Also, be sure to give the plot a title and label the axes appropriately.) Based on the scatterplot, does there seem to be a relationship between the two variables? Briefly explain.
+```{r}
+Nutrition = read.csv("nutrition.csv")
+
+plot(chol ~ weight, data = diabetes,
+     ylab = 'cholesterol',
+     xlab = 'weight',
+     col = 'magenta',
+     main = 'cholesterol vs wieght')
+```
+
+It is quite hard to say that they are related. They seem to be unrelated.
+
+## Exercise 6 (Importing Data, Plotting)
+
+**(a)** Create a histogram of `Calories`. Do not modify `R`'s default bin selection. Make the plot presentable. Describe the shape of the histogram. Do you notice anything unusual?
+```{r}
+library(readr)
+Nutrition <- read_csv("nutrition.csv")
+
+hist(Nutrition$Calories,
+    xlab = 'Calories',
+    main = 'Histogram of Calories',
+    col = 'brown')
+```
+
+This histogram is quite skewed to the right. Frequencey tend to decrease as calories increase. There are a couple of unusual things I noted. There are outliers calories larger than 800 and frequencey increased between 350 and 400.
+
+**(b)** Create a scatterplot of calories (y-axis) vs protein (x-axis). Make the plot presentable. Do you notice any trends? Do you think that knowing only the protein content of a food, you could make a good prediction of the calories in the food?
+```{r}
+plot(Calories ~ Protein, data = Nutrition,
+     ylab = 'Calories in kcal',
+     xlab = 'Protein in grams',
+     main = 'Calories vs Protein',
+     col = 'brown', 
+     pch = 20,
+     cex = 2)
+```
+
+Calories tend to decrease as protein decreases. Yes, I believe that you can make a good prediction when amount of protein is given.
+
+**(c)** Create a scatterplot of `Calories` (y-axis) vs `4 * Protein + 4 * Carbs + 9 * Fat + 2 * Fiber` (x-axis). Make the plot presentable. You will either need to add a new variable to the data frame, or, use the `I()` function in your formula in the call to `plot()`. If you are at all familiar with nutrition, you may realize that this formula calculates the calorie count based on the protein, carbohydrate, and fat values. You'd expect then that the result here is a straight line. Is it? If not, can you think of any reasons why it is not?
+```{r}
+calorie_count = I((4 * Nutrition$Protein) + (4 * Nutrition$Carbs) + (9 * Nutrition$Fat) + (2 * Nutrition$Fiber))
+
+plot(Nutrition$Calories ~ calorie_count,
+     ylab = 'Calories',
+     xlab = 'Calorie Count', 
+     main = 'Calories vs Calorie Count',
+     pch = 20,
+     cex = 2,
+     col = 'brown')
+```
+
+Yes, I expected a straight line, and it actually created a straight lines.

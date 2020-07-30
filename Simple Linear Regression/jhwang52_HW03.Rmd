@@ -1,0 +1,377 @@
+---
+title: 'jhwang52_HW03'
+author: "Jung Hyun Hwang"
+date: 'Feb 17'
+output:
+  html_document:
+    theme: readable
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+## Exercise 1 (Using `lm`)
+
+For this exercise we will use the `faithful` dataset. This is a default dataset in `R`, so there is no need to load it. You should use `?faithful` to learn about the background of this dataset.
+
+**(a)** Suppose we would like to predict the duration of an eruption of [the Old Faithful geyser](http://www.yellowstonepark.com/about-old-faithful/) in [Yellowstone National Park](https://en.wikipedia.org/wiki/Yellowstone_National_Park) based on the waiting time before an eruption. Fit a simple linear model in `R` that accomplishes this task. Store the results in a variable called `faithful_model`. Output the result of calling `summary()` on `faithful_model`.
+```{r}
+faithful_model = lm(eruptions ~waiting, data = faithful)
+summary(faithful_model)
+```
+
+
+**(b)** Output only the estimated regression coefficients. Interpret $\beta_0$ and $\hat{\beta_1}$ in the *context of the problem*. Be aware that only one of those is an estimate.
+```{r}
+coef(faithful_model)
+```
+
+$\beta_0$ is the Intercept, which represents the eruption time when waiting time is equal to zero. Since eruption time can't be negative, it does not really tell you anything in this case.
+
+$\hat{\beta_1}$ is the waiting, which indicates that each additional minute of waiting time, druption time is expected to increase by 0.07562.
+
+**(c)** Use your model to predict the duration of an eruption based on a waiting time of **80** minutes. Do you feel confident in this prediction? Briefly explain.
+```{r}
+predict(faithful_model, data.frame(waiting = 80))
+range(faithful$waiting)
+```
+
+Yes, I should feel confident in this prediction because 80 mins of waiting time falls between the range.
+
+**(d)** Use your model to predict the duration of an eruption based on a waiting time of **120** minutes. Do you feel confident in this prediction? Briefly explain.
+```{r}
+predict(faithful_model, data.frame(waiting = 120))
+range(faithful$waiting)
+```
+
+
+No. Since 120 mins is not in the range, prediction is not right.
+
+**(e)** Calculate the RSS for this model.
+```{r}
+sum(resid(faithful_model)^2)
+```
+
+
+**(f)** Create a scatterplot of the data and add the fitted regression line. Make sure your plot is well labeled and is somewhat visually appealing.
+```{r}
+plot(eruptions ~waiting, data = faithful, 
+     ylab = 'Eruption time',
+     xlab = 'Waiting time',
+     main = 'Eruptione time and Waiting time',
+     pch = 20,
+     cex = 1,
+     col = 'darkorange')
+abline(faithful_model)
+```
+
+
+**(g)** Report the value of $R^2$ for the model. Do so directly. Do not simply copy and paste the value from the full output in the console after running `summary()` in part **(a)**.
+```{r}
+summary(faithful_model)$r.squared
+```
+
+
+## Exercise 2 (Writing Functions)
+
+This exercise is a continuation of Exercise 1.
+
+**(a)** Write a function called `get_sd_est` that calculates an estimate of $\sigma$ in one of two ways depending on input to the function. The function should take two arguments as input:
+
+- `model_resid` - A vector of residual values from a fitted model.
+- `mle` - A logical (`TRUE` / `FALSE`) variable which defaults to `FALSE`.
+
+The function should return a single value:
+
+- $s_e$ if `mle` is set to `FALSE`.
+- $\hat{\sigma}$ if `mle` is set to `TRUE`.
+```{r}
+get_sd_ext = function(model_resid, mle = F) {
+  n = length(model_resid) - 2 *!mle
+  sqrt(sum(model_resid^2) / n)
+}
+```
+
+**(b)** Run the function `get_sd_est` on the residuals from the model in Exercise 1, with `mle` set to `FALSE`.
+```{r}
+get_sd_ext(resid(faithful_model))
+```
+
+
+**(c)** Run the function `get_sd_est` on the residuals from the model in Exercise 1, with `mle` set to `TRUE`.
+```{r}
+get_sd_ext(resid(faithful_model), mle = T)
+```
+
+
+**(d)** To check your work, output `summary(faithful_model)$sigma`. It should match at least one of **(b)** or **(c)**.
+```{r}
+summary(faithful_model)$sigma
+```
+
+
+## Exercise 3 (Simulating SLR)
+
+Consider the model
+
+\[
+Y_i = 3 - 7 x_i + \epsilon_i
+\]
+
+with 
+
+\[
+\epsilon_i \sim N(\mu = 0, \sigma^2 = 4)
+\]
+
+where $\beta_0 = 3$ and $\beta_1 = -7$.
+
+Before answering the following parts, set a seed value equal to **your** birthday, as was done in the previous assignment.
+
+```{r}
+birthday = 19960729
+set.seed(birthday)
+```
+
+**(a)** Use `R` to simulate `n = 50` observations from the above model. For the remainder of this exercise, use the following "known" values of $x$.
+
+```{r}
+
+sim_slr = function(n, beta_0 = 10, beta_1 = 5, sigma = 2, xmin = 0, xmax = 10) {
+  epsilon = rnorm(n, mean = 0, sd = sigma)
+  x = runif(n = 50, 0, 10)
+  y = beta_0 + beta_1 * x + epsilon
+  data.frame(predictor = x, response = y)
+}
+
+sim_data = sim_slr(50, 3, -7, 2)
+```
+
+You may use [the `sim_slr ` function provided in the text](http://daviddalpiaz.github.io/appliedstats/simple-linear-regression.html#simulating-slr). Store the data frame this function returns in a variable of your choice. Note that this function calls $y$ `response` and $x$ `predictor`.
+
+**(b)** Fit a model to your simulated data. Report the estimated coefficients. Are they close to what you would expect? Briefly explain.
+```{r}
+model = lm(response ~predictor, data = sim_data)
+coef(model)
+```
+
+Yes, they are close to what I expected. The Intercept, which is $\beta_0$, is close enough to three, and the predictor, which is $\beta_1$, is nearly exactly -7.
+
+**(c)** Plot the data you simulated in part **(a)**. Add the regression line from part **(b)**. Hint: Keep the two commands in the same chunk, so `R` knows what plot to add the line to when knitting your `.Rmd` file.
+```{r}
+plot(response ~predictor, data = sim_data,
+     main = 'Simulated data',
+     pch = 20,
+     cex = 2,
+     col = 'brown')
+abline(model)
+```
+
+
+**(d)** Use `R` to repeat the process of simulating `n = 50` observations from the above model $2000$ times. Each time fit a SLR model to the data and store the value of $\hat{\beta_1}$ in a variable called `beta_hat_1`. Some hints:
+
+- Use a `for` loop.
+- Create `beta_hat_1` before writing the `for` loop. Make it a vector of length $2000$ where each element is `0`.
+- Inside the body of the `for` loop, simulate new $y$ data each time. Use a variable to temporarily store this data together with the known $x$ data as a data frame.
+- After simulating the data, use `lm()` to fit a regression. Use a variable to temporarily store this output.
+- Use the `coef()` function and `[]` to extract the correct estimated coefficient.
+- Use `beta_hat_1[i]` to store in elements of `beta_hat_1`.
+- See the notes on [Distribution of a Sample Mean](http://daviddalpiaz.github.io/appliedstats/introduction-to-r.html#distribution-of-a-sample-mean) for some inspiration.
+
+You can do this differently if you like. Use of these hints is not required.
+```{r}
+beta_hat_1 = rep(0, 2000)
+for(i in 1:2000) {
+  sim_data_2 = sim_slr(50, 3, -7, 2)
+  model_2 = lm(response ~predictor, data = sim_data_2)
+  beta_hat_1[i] = coef(model_2)[2]
+}
+```
+
+
+**(e)** Report the mean and standard deviation of `beta_hat_1`. Do either of these look familiar?
+```{r}
+mean(beta_hat_1)
+sd(beta_hat_1)
+```
+
+The mean of $\beta_hat_1$ is very close to $\beta_1$.
+
+**(f)** Plot a histogram of `beta_hat_1`. Comment on the shape of this histogram.
+```{r}
+hist(beta_hat_1,
+     xlab = 'beta_hat_1',
+     main = 'Histogram of beta_hat_1',
+     col = 'brown')
+```
+
+This is very close to a normal distribution with a mean close to -7.0.
+
+## Exercise 4 (Be a Skeptic)
+
+Consider the model
+
+\[
+Y_i = 10 + 0 x_i + \epsilon_i
+\]
+
+with
+
+\[
+\epsilon_i \sim N(\mu = 0, \sigma^2 = 1)
+\]
+
+where $\beta_0 = 10$ and $\beta_1 = 0$.
+
+Before answering the following parts, set a seed value equal to **your** birthday, as was done in the previous assignment.
+
+```{r}
+birthday = 19960729
+set.seed(birthday)
+```
+
+**(a)** Use `R` to repeat the process of simulating `n = 25` observations from the above model $1500$ times. For the remainder of this exercise, use the following "known" values of $x$.
+
+```{r}
+sim_slr = function(n, beta_0 = 10, beta_1 = 5, sigma = 2, xmin = 0, xmax = 10) {
+  epsilon = rnorm(n, mean = 0, sd = sigma)
+  x = runif(n = 25, 0, 10)
+  y = beta_0 + beta_1 * x + epsilon
+  data.frame(predictor = x, response = y)
+}
+
+beta_hat_1 = rep(0, 1500)
+for(i in 1:1500) {
+  sim_data_3 = sim_slr(25, 10, 0, 1)
+  model_3 = lm(response ~predictor, data = sim_data_3)
+  beta_hat_1[i] = coef(model_3)[2]
+}
+```
+
+Each time fit a SLR model to the data and store the value of $\hat{\beta_1}$ in a variable called `beta_hat_1`. You may use [the `sim_slr ` function provided in the text](http://daviddalpiaz.github.io/appliedstats/simple-linear-regression.html#simulating-slr). Hint: Yes $\beta_1 = 0$.
+
+**(b)** Plot a histogram of `beta_hat_1`. Comment on the shape of this histogram.
+```{r}
+hist(beta_hat_1,
+     xlab = 'beta_hat_1',
+     main = 'Histogram of beta_hat_1',
+     col = 'brown')
+```
+
+This is very close to a normal distribution with a mean close to 0.0.
+
+**(c)** Import the data in [`skeptic.csv`](skeptic.csv) and fit a SLR model. The variable names in `skeptic.csv` follow the same convention as those returned by `sim_slr()`. Extract the fitted coefficient for $\beta_1$.
+```{r}
+skeptic = read.csv("skeptic.csv")
+skeptic_model = lm(response ~predictor, data = skeptic)
+coef(skeptic_model)[2]
+```
+
+
+**(d)** Re-plot the histogram from **(b)**. Now add a vertical red line at the value of $\hat{\beta_1}$ in part **(c)**. To do so, you'll need to use `abline(v = c, col = "red")` where `c` is your value.
+```{r}
+c = coef(skeptic_model)[2]
+hist(beta_hat_1,
+     xlab = 'beta_hat_1',
+     main = 'Histogram of beta_hat_1',
+     col = 'brown')
+abline(v = c, col = 'red')
+```
+
+
+**(e)** Your value of $\hat{\beta_1}$ in **(c)** should be positive. What proportion of the `beta_hat_1` values are larger than your $\hat{\beta_1}$? Return this proportion, as well as this proportion multiplied by `2`.
+```{r}
+mean_ = mean(beta_hat_1 > coef(skeptic_model)[2])
+mean_
+2 * mean_
+```
+
+
+**(f)** Based on your histogram and part **(e)**, do you think the [`skeptic.csv`](skeptic.csv) data could have been generated by the model given above? Briefly explain.
+
+Although 0.1548 falls between the range, it is quite hard to say that data has been generated by the given model because it is a extreme value. However, there is still a slight chance that data has been generated by the given model.
+
+
+## Exercise 5 (Comparing Models)
+
+For this exercise we will use the data stored in [`goalies.csv`](goalies.csv). It contains career data for all 716 players in the history of the National Hockey League to play goaltender through the 2014-2015 season. The variables in the dataset are:
+
+- `Player` - NHL Player Name
+- `First` - First year of NHL career
+- `Last` - Last year of NHL career
+- `GP` - Games Played
+- `GS` - Games Started
+- `W` - Wins
+- `L` - Losses
+- `TOL` - Ties/Overtime/Shootout Losses
+- `GA` - Goals Against
+- `SA` - Shots Against
+- `SV` - Saves
+- `SV_PCT` - Save Percentage
+- `GAA` - Goals Against Average
+- `SO` - Shutouts
+- `MIN` - Minutes
+- `G` - Goals (that the player recorded, not opponents)
+- `A` - Assists (that the player recorded, not opponents)
+- `PTS` - Points (that the player recorded, not opponents)
+- `PIM` - Penalties in Minutes
+
+For this exercise we will define the "Root Mean Square Error" of a model as
+
+\[
+RMSE = \sqrt{\frac{1}{n} \sum_{i = 1}^{n}(y_i - \hat{y}_i)^2}.
+\]
+
+**(a)** Fit a model with "wins"" as the response and "minutes" as the predictor. Calculate the RMSE of this model. Also provide a scatterplot with the fitted regression line.
+```{r}
+library(readr)
+goalies <- read_csv("goalies.csv")
+```
+
+```{r}
+goalies_model = lm(W ~MIN, data = goalies)
+sqrt(mean(resid(goalies_model)^2))
+plot(W ~MIN, data = goalies,
+     ylab = 'Wins',
+     xlab = 'Minutes',
+     main = 'Wins vs Minutes',
+     col = 'darkorange',
+     pch = 20,
+     cex = 2)
+abline(goalies_model)
+```
+
+
+**(b)** Fit a model with "wins"" as the response and "goals against" as the predictor. Calculate the RMSE of this model. Also provide a scatterplot with the fitted regression line.
+```{r}
+goalies_model_GA = lm(W ~GA, data = goalies)
+sqrt(mean(resid(goalies_model_GA)^2))
+plot(W ~GA, data = goalies,
+     ylab = 'Wins',
+     xlab = 'Goals against',
+     main = 'Wins vs Goals against',
+     col = 'darkorange',
+     pch = 20,
+     cex = 2)
+abline(goalies_model_GA)
+```
+
+
+**(c)** Fit a model with "wins"" as the response and "shutouts" as the predictor. Calculate the RMSE of this model. Also provide a scatterplot with the fitted regression line.
+```{r}
+goalies_model_SO = lm(W ~SO, data = goalies)
+sqrt(mean(resid(goalies_model_SO)^2))
+plot(W ~SO, data = goalies,
+     ylab = 'Wins',
+     xlab = 'Shutouts',
+     main = 'Wins vs Shutouts',
+     col = 'darkorange',
+     pch = 20,
+     cex = 2)
+abline(goalies_model_SO)
+```
+
+
+**(d)** Based on the previous three models, which of the three predictors used is most helpful for predicting wins? Briefly explain.
+
+Minutes is the most helpful predictor for predicting wins becuase it has the lowest RMSE among three predictors. Lower RMSE is better predictor because it creates less error.

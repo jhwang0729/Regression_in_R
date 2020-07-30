@@ -1,0 +1,464 @@
+---
+title: 'STAT 420: Homework 04'
+author: "Jung Hyun Hwang, jhwang52"
+date: 'Feb 25, 2020'
+output:
+  html_document:
+    theme: readable
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+## Exercise 1 (Using `lm` for Inference)
+
+For this exercise we will again use the `faithful` dataset. Remember, this is a default dataset in `R`, so there is no need to load it. You should use `?faithful` to refresh your memory about the background of this dataset about the duration and waiting times of eruptions of [the Old Faithful geyser](http://www.yellowstonepark.com/about-old-faithful/) in [Yellowstone National Park](https://en.wikipedia.org/wiki/Yellowstone_National_Park).
+
+**(a)** Fit the following simple linear regression model in `R`. Use the eruption duration as the response and waiting time as the predictor. 
+
+\[
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+\]
+
+Store the results in a variable called `faithful_model`. Use a $t$ test to test the significance of the regression. Report the following:
+
+- The null and alternative hypotheses
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.01$
+- A conclusion in the context of the problem
+
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+```{r}
+faithful_model = lm(eruptions ~waiting, data = faithful)
+summary(faithful_model)
+```
+
+
+$H_0$ : $\beta_1$ = 0 vs $H_0$ : $\beta_1$ $\neq$ 0
+```{r}
+summary(faithful_model)$coefficients[2, 3]
+```
+$t$ = 34.089
+
+
+```{r}
+summary(faithful_model)$coefficients[2, 4]
+```
+$p$-val = 8.130 * $10^{-100}$
+Since $p$-val is much less than $\alpha$ = 0.01, there is an evidence to reject the null hypothesis.
+There is a strong evidence that show the relationship between eruption duration and waiting time.
+
+
+**(b)** Calculate a 99% confidence interval for $\beta_1$. Give an interpretation of the interval in the context of the problem.
+```{r}
+confint(faithful_model, "waiting", 0.99)
+```
+$\beta_1$, which is slope of the model, tends to fall in between 0.070 and 0.081 with chance of 99%. This indicates that each additional waiting 1 minute, eruption duration tend to be increased by between 0.070 and 0.0813 minute.
+
+
+**(c)** Calculate a 90% confidence interval for $\beta_0$. Give an interpretation of the interval in the context of the problem.
+```{r}
+confint(faithful_model, "(Intercept)", 0.90)
+```
+$\beta_0$, which is intercept of the model, tends to fall in between -2.138 and -1.610 with chance of 90%. This indicates that eruption time would be between -2.138 and -1.610 minutes, but it does not really mean anything in this case because time can't be negative number.
+
+
+**(d)** Use a 95% confidence interval to estimate the mean eruption duration for waiting times of 75 and 80 minutes. Which of the two intervals is wider? Why?
+```{r}
+new_waitings = data.frame(waiting = c(75, 80))
+predict(faithful_model, level = 0.95, interval = c("confidence"), newdata = new_waitings)
+```
+```{r}
+mean(faithful$waiting)
+```
+
+Since waiting time of 80 minutes is further away from the sample mean, which is 70.897, the interval for waiting time of 80 minutes is larger than interval of waiting time for 75 minutes.
+
+
+**(e)** Use a 95% prediction interval to predict the eruption duration for waiting times of 75 and 100 minutes.
+```{r}
+new_waitings = data.frame(waiting = c(75, 100))
+predict(faithful_model, level = 0.95, interval = c("prediction"), newdata = new_waitings)
+```
+
+
+**(f)** Create a scatterplot of the data. Add the regression line, 95% confidence bands, and 95% prediction bands.
+```{r}
+waiting_grid = seq(min(faithful$waiting), max(faithful$waiting), by = 0.01)
+duration_ci_band = predict(faithful_model, newdata = data.frame(waiting = waiting_grid), level = 0.95, interval = "confidence")
+duration_pi_band = predict(faithful_model, newdata = data.frame(waiting = waiting_grid), level = 0.95, interval = "prediction")
+
+plot(eruptions ~waiting, data = faithful,
+     xlab = 'Waiting time in minutes',
+     ylab = 'Eruption duration in minutes',
+     main = 'Eruption vs Waiting',
+     pch = 21,
+     cex = 2,
+     col = 'darkorange')
+abline(faithful_model, lwd = 2, col = 'green')
+
+lines(waiting_grid, duration_ci_band[,2], col = 'blue', lwd = 3, lty = 2)
+lines(waiting_grid, duration_ci_band[,3], col = 'blue', lwd = 3, lty = 2)
+lines(waiting_grid, duration_pi_band[,2], col = 'red', lwd = 3, lty = 3)
+lines(waiting_grid, duration_pi_band[,3], col = 'red', lwd = 3, lty = 3)
+```
+
+
+## Exercise 2 (Using `lm` for Inference)
+
+For this exercise we will again use the `diabetes` dataset, which can be found in the `faraway` package.
+```{r}
+library(faraway)
+```
+
+
+**(a)** Fit the following simple linear regression model in `R`. Use the total cholesterol as the response and weight as the predictor. 
+
+\[
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+\]
+
+Store the results in a variable called `cholesterol_model`. Use an $F$ test to test the significance of the regression. Report the following:
+
+- The null and alternative hypotheses
+- The ANOVA table (You may use `anova()` and omit the row for Total.)
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.05$
+- A conclusion in the context of the problem
+
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+```{r}
+cholesterol_model = lm(chol ~weight, data = diabetes)
+summary(cholesterol_model)
+```
+$H_0$ : $\beta_1$ = 0 vs $H_0$ : $\beta_1$ $\neq$ 0
+
+```{r}
+anova(cholesterol_model)[-2,]
+```
+
+```{r}
+summary(cholesterol_model)$fstatistic[1]
+```
+
+F-val = 1.793
+```{r}
+anova(cholesterol_model)[1,5]
+```
+p-val = 0.181
+
+Since p-val is bigger than $\alpha$, which is 0.05, this fails to reject the null hypothesis.
+There is an evidence that there is no linear relationship between cholesterol and weight.
+
+**(b)** Fit the following simple linear regression model in `R`. Use HDL as the response and weight as the predictor. 
+
+\[
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+\]
+
+Store the results in a variable called `hdl_model`. Use an $F$ test to test the significance of the regression. Report the following:
+
+- The null and alternative hypotheses
+- The ANOVA table (You may use `anova()` and omit the row for Total.)
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.05$
+- A conclusion in the context of the problem
+
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+```{r}
+hdl_model = lm(hdl ~weight, data = diabetes)
+summary(hdl_model)
+```
+$H_0$ : $\beta_1$ = 0 vs $H_0$ : $\beta_1$ $\neq$ 0
+
+```{r}
+anova(hdl_model)[-2,]
+```
+
+```{r}
+summary(hdl_model)$fstatistic[1]
+```
+F-val = 36.909
+
+```{r}
+anova(hdl_model)[1,5]
+```
+p-val = 2.891 * $10^{-9}$
+
+Since p-val is much less than $\alpha$, which is 0.05, this rejects the null hypothesis.
+This indicates that there is an evidence that there is a linear relationship between HDL and weight.
+
+
+## Exercise 3 (Inference "without" `lm`)
+
+For this exercise we will once again use the data stored in [`goalies.csv`](goalies.csv). It contains career data for all 716 players in the history of the National Hockey League to play goaltender through the 2014-2015 season. The two variables we are interested in are:
+
+- `W` - Wins
+- `MIN` - Minutes
+
+Fit a SLR model with `W` as the response and `MIN` as the predictor. Test $H_0: \beta_1 = 0.008$ vs $H_1: \beta_1 < 0.008$ at $\alpha = 0.01$. Report the following: 
+
+- $\hat{\beta_1}$
+- $SE[\hat{\beta_1}]$
+- The value of the $t$ test statistic
+- The degrees of freedom
+- The p-value of the test
+- A statistical decision at $\alpha = 0.01$
+
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+
+You should use `lm()` to fit the model and obtain the estimate and standard error. But then you should directly calculate the remaining values. Hint: be careful with the degrees of freedom. Think about how many observations are being used.
+```{r}
+library(readr)
+goalies = read.csv("goalies(4).csv")
+goalies_model = lm(W ~MIN, data = goalies)
+summary(goalies_model)
+```
+
+```{r}
+est = summary(goalies_model)$coef[2, 1]
+hyp = 0.008
+se = summary(goalies_model)$coef[2, 2]
+n = length(fitted(goalies_model))
+t = (est - hyp) / se
+pval = pt(t, df = n -2)
+```
+```{r}
+print(est)
+```
+$\hat{\beta_1}$ is 0.00785
+
+```{r}
+print(se)
+```
+$SE[\hat{\beta_1}]$ is 5.071 * $10^{-5}$
+
+```{r}
+print(t)
+```
+t-val = -3.037
+
+Degrees of freedom is 711 because the data contained some missing values.
+
+```{r}
+print(pval)
+```
+p-val = 0.00124
+
+Since p-val is less than $\alpha$, which is 0.01, it rejects the null hypothesis.
+
+
+## Exercise 4 (Simulating Sampling Distributions)
+
+For this exercise we will simulate data from the following model:
+
+\[
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+\]
+
+Where $\epsilon_i \sim N(0, \sigma^2).$ Also, the parameters are known to be:
+
+- $\beta_0 = 4$
+- $\beta_1 = 0.5$
+- $\sigma^2 = 25$
+
+We will use samples of size $n = 50$.
+
+**(a)** Simulate this model $1500$ times. Each time use `lm()` to fit a SLR model, then store the value of $\hat{\beta}_0$ and $\hat{\beta}_1$. Set a seed using **your** UIN before performing the simulation. Note, we are simulating the $x$ values once, and then they remain fixed for the remainder of the exercise.
+
+```{r}
+uin = 675982699
+set.seed(uin)
+n = 50
+x = seq(0, 20, length = n)
+
+beta_0 = 4
+beta_1 = 0.5
+sigma = 5
+population_line = beta_0 + beta_1 * x
+
+N = 1500
+beta_hats = matrix(0, N, 2)
+for (i in 1:N) {
+  y = population_line + rnorm(n, mean = 0, sd = sigma)
+  beta_hats[i, ] = coef(lm(y ~x))
+}
+
+beta_0_hats = beta_hats[ , 1]
+beta_1_hats = beta_hats[ , 2]
+```
+
+**(b)** For the *known* values of $x$, what is the expected value of $\hat{\beta}_1$?
+
+Since it is asking for the exapected value of $\hat{\beta}_1$ for the known values of $x$, it would be 0.5, which is equal to given model.
+
+
+**(c)** For the known values of $x$, what is the standard deviation of $\hat{\beta}_1$?
+```{r}
+Sxx = sum((x - mean(x)) ^ 2)
+sigma / sqrt(Sxx)
+```
+SD[$\hat{\beta}_1$] = 0.120
+
+
+**(d)** What is the mean of your simulated values of $\hat{\beta}_1$? Does this make sense given your answer in **(b)**?
+```{r}
+mean(beta_1_hats)
+```
+The mean is 0.495. Yes, it makes sense, because it is extremely close to the 0.5
+
+
+**(e)** What is the standard deviation of your simulated values of $\hat{\beta}_1$? Does this make sense given your answer in **(c)**?
+```{r}
+sd(beta_1_hats)
+```
+It is 0.117. Yes, it makes sense because it is close to the true SD of $\beta_1$
+
+
+**(f)** For the known values of $x$, what is the expected value of $\hat{\beta}_0$?
+
+Since it is asking the expected value of $\hat{\beta}_0$ for the know values of $x$, it would be 4.
+
+
+**(g)** For the known values of $x$, what is the standard deviation of $\hat{\beta}_0$?
+```{r}
+sigma * sqrt(1 / n + mean(x) ^ 2 / Sxx)
+```
+It is 1.393
+
+
+**(h)** What is the mean of your simulated values of $\hat{\beta}_0$? Does this make sense given your answer in **(f)**?
+```{r}
+mean(beta_0_hats)
+```
+The mean is 4.052. Yes it makes sense because it is close to the true mean of $\beta_0$
+
+
+**(i)** What is the standard deviation of your simulated values of $\hat{\beta}_0$? Does this make sense given your answer in **(g)**?
+```{r}
+sd(beta_0_hats)
+```
+Yes it makes sense because it is close to given SD, which is the population SD.
+
+
+**(j)** Plot a histogram of your simulated values for $\hat{\beta}_1$. Add the normal curve for the true sampling distribution of $\hat{\beta}_1$.
+```{r}
+hist(beta_1_hats,
+     col = 'darkorange',
+     main = 'Histogram',
+     prob = T)
+
+sd_beta_1 = sigma / sqrt(Sxx)
+curve(dnorm(x, mean = beta_1, sd = sd_beta_1), add = T, lwd = 3)
+```
+
+
+**(k)** Plot a histogram of your simulated values for $\hat{\beta}_0$. Add the normal curve for the true sampling distribution of $\hat{\beta}_0$.
+```{r}
+hist(beta_0_hats,
+     col = 'darkorange',
+     main = 'Histogram',
+     prob = T)
+
+sd_beta_0 = sigma * sqrt(1/n + mean(x) ^ 2 / Sxx)
+curve(dnorm(x, mean = beta_0, sd = sd_beta_0), add = T, lwd = 3)
+```
+
+
+## Exercise 5 (Simulating Confidence Intervals)
+
+For this exercise we will simulate data from the following model:
+
+\[
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+\]
+
+Where $\epsilon_i \sim N(0, \sigma^2).$ Also, the parameters are known to be:
+
+- $\beta_0 = 1$
+- $\beta_1 = 3$
+- $\sigma^2 = 16$
+
+We will use samples of size $n = 20$.
+
+Our goal here is to use simulation to verify that the confidence intervals really do have their stated confidence level.
+
+**(a)** Simulate this model $2000$ times. Each time use `lm()` to fit a SLR model, then store the value of $\hat{\beta}_0$ and $s_e$. Set a seed using **your** UIN before performing the simulation. Note, we are simulating the $x$ values once, and then they remain fixed for the remainder of the exercise.
+
+```{r}
+uin = 675982699
+set.seed(uin)
+n = 20
+x = seq(-5, 5, length = n)
+
+beta_0 = 1
+beta_1 = 3
+sigma = 4
+population_line = beta_0 + beta_1 * x
+
+N = 2000
+beta_hat_0 = rep(0, N)
+s_e = rep(0, N)
+
+for (i in 1:N) {
+  y = population_line + rnorm(n, 0, sigma)
+  beta_hat_0[i] = coef(lm(y ~x))[1]
+  s_e[i] = summary((lm(y ~x)))$sigma
+}
+
+```
+
+**(b)** For each of the $\hat{\beta}_0$ that you simulated calculate a 90% confidence interval. Store the lower limits in a vector `lower_90` and the upper limits in a vector `upper_90`. Some hints:
+
+- You will need to use `qt()` to calculate the critical value, which will be the same for each interval.
+- Remember that `x` is fixed, so $S_{xx}$ will be the same for each interval.
+- You could, but do not need to write a `for` loop. Remember vectorized operations.
+```{r}
+alpha = 0.10
+t_crit = -qt(alpha / 2, df = n - 2)
+Sxx = sum((x - mean(x)) ^ 2)
+
+lower = beta_hat_0 - t_crit * s_e * sqrt(1 / n + mean(x) ^ 2 / Sxx)
+upper = beta_hat_0 + t_crit * s_e * sqrt(1 / n + mean(x) ^ 2 / Sxx)
+
+```
+
+
+**(c)** What proportion of these intervals contain the true value of $\beta_0$?
+```{r}
+mean(lower < 1 & 1 < upper)
+```
+About 90.6%.
+
+**(d)** Based on these intervals, what proportion of the simulations would reject the test $H_0: \beta_0 = 0$ vs $H_1: \beta_0 \neq 0$ at $\alpha = 0.10$?
+```{r}
+1 - mean(lower < 0 & 0 < upper)
+```
+About 29.1%
+
+**(e)** For each of the $\hat{\beta}_0$ that you simulated calculate a 99% confidence interval. Store the lower limits in a vector `lower_99` and the upper limits in a vector `upper_99`.
+```{r}
+alpha = 0.01
+t_crit = -qt(alpha / 2, df = n - 2)
+Sxx = sum((x - mean(x)) ^ 2)
+
+lower = beta_hat_0 - t_crit * s_e * sqrt(1 / n + mean(x) ^ 2 / Sxx)
+upper = beta_hat_0 + t_crit * s_e * sqrt(1 / n + mean(x) ^ 2 / Sxx)
+```
+
+
+**(f)** What proportion of these intervals contain the true value of $\beta_0$?
+```{r}
+mean(lower < 1 & 1 < upper)
+```
+About 99.15%
+
+**(g)** Based on these intervals, what proportion of the simulations would reject the test $H_0: \beta_0 = 0$ vs $H_1: \beta_0 \neq 0$ at $\alpha = 0.01$?
+```{r}
+1 - mean(lower < 0 & 0 < upper)
+```
+About 6.2%
+

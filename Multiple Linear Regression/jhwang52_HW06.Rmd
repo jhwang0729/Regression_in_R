@@ -1,0 +1,316 @@
+---
+title: 'STAT 420: Homework 06'
+author: "Jung Hyun Hwang, jhwang52"
+date: 'March 10'
+output:
+  html_document:
+    theme: readable
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+## Exercise 1 (Regression for Explanation)
+
+For this exercise use the `prostate` dataset from the `faraway` package. Use `?prosate` to learn about the dataset. The goal of this exercise is to find a model that is useful for **explaining** the response `lpsa`.
+```{r}
+library(faraway)
+
+names(prostate)
+```
+
+
+Fit a total of five models.
+
+- One must use all possible predictors.
+- One must use only `lcavol` as a predictor.
+- The remaining three you must choose. The models you choose must be picked in a way such that for any two of the five models, one is nested inside the other.
+
+```{r}
+full_model = lm(lpsa ~., data = prostate)
+lcavol_model = lm(lpsa ~lcavol, data = prostate)
+n1_model = lm(lpsa ~lcavol + lweight, data = prostate)
+n2_model = lm(lpsa ~lcavol + lweight + svi, data = prostate)
+n3_model = lm(lpsa ~lcavol + lweight + svi + age, data = prostate)
+```
+
+```{r}
+anova(lcavol_model, n1_model)
+anova(n1_model, n2_model)
+anova(n2_model, n3_model)
+anova(n3_model, full_model)
+```
+
+Argue that one of the five models is the best among them for explaining the response. Use appropriate methods and justify your answer.
+
+
+I would start with comparing the model that has a single predictor, lcavol, and the model that has two predictors, which are lcavol and lweight. Notice that as I keep building up models and comparing models sequentially, I am comapring two models in a way such that one model is 'nested' inside the other.
+
+I also will use the $\alpha$ = 0.05 in each test.
+
+```{r}
+anova(lcavol_model, n1_model)[2, 6]
+```
+
+$H_0$ : lcavol_model vs $H_1$ : n1_model
+
+As I mentioned earlier, I would compare two models, one has a single predictor and the other one has two predictors, in the first place. I printed the p-val, and it is lower than the $\alpha$ value that I set previously. Since p-val is less than $\alpha$ value, we reject the null hypothesis and prefer n1_model.
+
+
+```{r}
+anova(n1_model, n2_model)[2, 6]
+```
+
+$H_0$ : n1_model vs $H_1$ : n2_model
+
+In n2_model one more predictor has been added, svi. In this case, p-val is less than $\alpha$, so we would reject the null again, indicating that there is a linear relationship between lpsa and svi. Since we rejected the null, we prefer n2_model
+
+
+```{r}
+anova(n2_model, n3_model)[2,6]
+```
+
+$H_0$ : n2_model vs $H_3$ : n3_model
+
+In n3_model, one more predictor has been added on top of n2_model, age. In this case, p-val is higher than $alpha$ that I have set up at the beginning. Since p-val is higher than $alpha$, we fail to reject the null test indicating that there is no linear relationship between lpsa and age. For this reason, it is better to stick with n2_model.
+
+So based on my test, I have figured out that n2_model, that has lcavol/ lweight/svi as predictors, is the best model among five models. We did not have to compare n2_model to full_model because at least one of the predictors, age, has no linear relationship with predictor, lpsa.
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \epsilon_i.
+\]
+
+$Y$ is the log of the prostate specific antigen measurement.
+$x_1$ is the log of the cancer volume.
+$x_2$ is the log of prostate weight.
+$x_3$ is the seminal vesicle invasion measurement.
+
+
+## Exercise 2 (Regression for Prediction)
+
+For this exercise use the `Boston` dataset from the `MASS` package. Use `?Boston` to learn about the dataset. The goal of this exercise is to find a model that is useful for **predicting** the response `medv`.
+
+When evaluating a model for prediction, we often look at RMSE. However, if we both fit the model with all the data, as well as evaluate RMSE using all the data, we're essentially cheating. We'd like to use RMSE as a measure of how well the model will predict on *unseen* data. If you haven't already noticed, the way we had been using RMSE resulted in RMSE decreasing as models became larger.
+
+To correct for this, we will only use a portion of the data to fit the model, then we will use leftover data to evaluate the model. We will call these datasets **train** (for fitting) and **test** (for evaluating). The definition of RMSE will stay the same
+
+\[
+\text{RMSE}(\text{model, data}) = \sqrt{\frac{1}{n} \sum_{i = 1}^{n}(y_i - \hat{y}_i)^2}
+\]
+
+where
+
+- $y_i$ are the actual values of the response for the given data
+- $\hat{y}_i$ are the predicted values using the fitted model and the predictors from the data
+
+However we will now evaluate it on both the **train** set and the **test** set separately. So each model you fit will have a **train** RMSE and a **test** RMSE. When calculating **test** RMSE, the predicted values will be found by predicting the response using the **test** data with the model fit using the **train** data. *__Test__ data should never be used to fit a model.*
+
+- Train RMSE: Model fit with train data. Evaluate on **train** data.
+- Test RMSE: Model fit with train data. Evaluate on **test** data.
+
+Set a seed of `42` and then split the `Boston` data into two datasets, one called `train_data` and one called `test_data`. The `train_data` dataframe should contain 400 randomly chosen observations. `test_data` will contain the remaining observations. Hint: consider the following code:
+
+```{r}
+library(MASS)
+set.seed(42)
+train_index = sample(1:nrow(Boston), 400)
+
+train_data = Boston[train_index, ]
+test_data = Boston[-train_index, ]
+```
+
+Fit a total of five models using the training data.
+
+- One must use all possible predictors.
+- One must use only `crim` as a predictor.
+- The remaining three you can pick to be anything you like. One of these should be the best of the five for predicting the response.
+
+```{r}
+train_crim_model = lm(medv ~crim, data = train_data)
+train_n1_model = lm(medv ~crim + tax, data = train_data)
+train_n2_model = lm(medv ~crim + tax + black, data = train_data)
+train_n3_model = lm(medv ~crim + zn + chas + nox + lstat, data = train_data)
+train_full_model = lm(medv ~., data = train_data)
+```
+
+
+For each model report the **train** and **test** RMSE. Argue that one of your models is the best for predicting the response.
+
+```{r}
+rmse = function(predicted, observed) {
+  sqrt(mean((observed - predicted) ^ 2))
+}
+```
+
+```{r}
+train_error = c(rmse(train_data$medv, predict(train_crim_model, train_data)),
+                rmse(train_data$medv, predict(train_n1_model, train_data)),
+                rmse(train_data$medv, predict(train_n2_model, train_data)),
+                rmse(train_data$medv, predict(train_n3_model, train_data)),
+                rmse(train_data$medv, predict(train_full_model, train_data)))
+```
+
+```{r}
+test_error = c(rmse(test_data$medv, predict(train_crim_model, test_data)),
+              rmse(test_data$medv, predict(train_n1_model, test_data)),
+              rmse(test_data$medv, predict(train_n2_model, test_data)),
+              rmse(test_data$medv, predict(train_n3_model, test_data)),
+              rmse(test_data$medv, predict(train_full_model, test_data)))
+```
+
+```{r}
+error = cbind(1:5, train_error, test_error)
+error
+```
+
+In this case, the full model has lowest value for both train error and test error. It, however, is important to realize that extra predictors in a model will have lower RMSE value, so it is quite important to consider how many predictor each models has. 
+
+Since train_n2_model has relatively low test error and used only three predictors, train_n2_model would be the best model for prediction.
+
+
+
+
+I want to make a quick note that I have asked this specific problem to Professor Unger and I was told to look at both RMSE and number of predictors a model has. He also confirmed that it is OK to use train_n2_model for prediction.
+
+
+## Exercise 3 (Simulating Multiple Regression)
+
+For this exercise we will simulate data from the following model:
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \beta_4 x_{i4} + \epsilon_i
+\]
+
+Where $\epsilon_i \sim N(0, \sigma^2).$ Also, the parameters are known to be:
+
+- $\beta_0 = 2$
+- $\beta_1 = 3$
+- $\beta_2 = 4$
+- $\beta_3 = 0$
+- $\beta_4 = 1$
+- $\sigma^2 = 16$
+
+We will use samples of size `n = 25`.
+
+We will verify the distribution of $\hat{\beta}_1$ as well as investigate some hypothesis tests.
+
+**(a)** We will first generate the $X$ matrix and data frame that will be used throughout the exercise. Create the following 9 variables:
+
+- `x0`: a vector of length `n` that contains all `1`
+- `x1`: a vector of length `n` that is randomly drawn from a uniform distribution between `0` and `10`
+- `x2`: a vector of length `n` that is randomly drawn from a uniform distribution between `0` and `10`
+- `x3`: a vector of length `n` that is randomly drawn from a uniform distribution between `0` and `10`
+- `x4`: a vector of length `n` that is randomly drawn from a uniform distribution between `0` and `10`
+- `X`: a matrix that contains `x0`, `x1`, `x2`, `x3`, `x4` as its columns
+- `C`: the $C$ matrix that is defined as $(X^\top X)^{-1}$
+- `y`: a vector of length `n` that contains all `0`
+- `ex_4_data`: a data frame that stores `y` and the **four** predictor variables. `y` is currently a placeholder which we will update during the simulation
+
+
+Report the diagonal of `C` as well as the 10th row of `ex_4_data`. For this exercise we will use the seed `42`.
+
+```{r}
+set.seed(42)
+n = 25
+
+x0 = rep(1, n)
+x1 = runif(n, min = 0, max = 10)
+x2 = runif(n, min = 0, max = 10)
+x3 = runif(n, min = 0, max = 10)
+x4 = runif(n, min = 0, max = 10)
+
+X = cbind(x0, x1, x2, x3, x4)
+C = solve(t(X) %*% X)
+y = rep(0, n)
+ex_4_data = data.frame(y, x1, x2, x3, x4)
+print(diag(C))
+print(ex_4_data[10, ])
+```
+
+**(b)** Create three vectors of length `1500` that will store results from the simulation in part **(c)**. Call them `beta_hat_1`, `beta_2_pval`, and `beta_3_pval`.
+
+```{r}
+N = 1500
+
+beta_hat_1 = rep(0, N)
+beta_2_pval = rep(0, N)
+beta_3_pval = rep(0, N)
+```
+
+
+**(c)** Simulate 1500 samples of size `n = 25` from the model above. Each time update the `y` value of `ex_4_data`. Then use `lm()` to fit a multiple regression model. Each time store:
+
+- The value of $\hat{\beta}_1$ in `beta_hat_1`
+- The p-value for the two-sided test of $\beta_2 = 0$ in `beta_2_pval`
+- The p-value for the two-sided test of $\beta_3 = 0$ in `beta_3_pval`
+
+```{r}
+beta_0 = 2
+beta_1 = 3
+beta_2 = 4
+beta_3 = 0
+beta_4 = 1
+sigma = 4
+
+for (i in 1:N) {
+  eps = rnorm(n, mean = 0, sd = sigma)
+  ex_4_data$y = beta_0 * x0 + beta_1 *x1 + beta_2 * x2 + beta_3 * x3 + beta_4 * x4 + eps
+  fit = lm(y ~., data = ex_4_data)
+  beta_hat_1[i] = coef(fit)[2]
+  beta_2_pval[i] = anova(fit)[4, 5] * 2
+  beta_3_pval[i] = anova(fit)[3, 5] * 2
+}
+```
+
+
+**(d)** Based on the known values of $X$, what is the true distribution of $\hat{\beta}_1$?
+
+\[
+\hat{\beta}_1 \sim N\left(\beta_1, \sigma^2 C_{11}  \right)
+\]
+
+\[
+\hat{\beta}_1 \sim N\left(\mu = `r beta_1`, \sigma^2 = `r sigma^2` \times `r C[1+1, 1+1]` = `r sigma^2 * C[1+1, 1+1]`  \right).
+\]
+
+\[
+\hat{\beta}_1 \sim N\left(\mu = `r beta_1`, \sigma^2 = `r sigma^2 * C[1+1, 1+1]`  \right).
+\]
+
+
+**(e)** Calculate the mean and variance of `beta_hat_1`. Are they close to what we would expect? Plot a histogram of `beta_hat_1`. Add a curve for the true distribution of $\hat{\beta}_1$. Does the curve seem to match the histogram?
+```{r}
+mean(beta_hat_1)
+```
+```{r}
+var(beta_hat_1)
+```
+
+Yes. They are close what we should expect.
+
+
+```{r}
+
+hist(beta_hat_1, prob = TRUE, breaks = 20,
+     main = 'Histogram',
+     col = 'darkorange')
+
+curve(dnorm(x, mean = beta_1, sd = sqrt(sigma ^ 2 * C[1 + 1, 1 + 1])),       col = "blue", add = TRUE, lwd = 3)
+```
+
+Yes. The curve matches the histogram quite well.
+
+**(f)** What proportion of the p-values stored in `beta_3_pval` are less than 0.05? Is this what you would expect?
+```{r}
+mean(beta_3_pval < 0.05)
+```
+
+Since $\beta_3$ is equal to 0, we can expect about 5% of the p-values to be significant at $\alpha$ is eqaul to 0.05. It is a little bit smaller than 0.05, but it is still less than 0.05 as we expected.
+
+
+**(g)** What proportion of the p-values stored in `beta_2_pval` are less than 0.05? Is this what you would expect?
+```{r}
+mean(beta_2_pval < 0.05)
+```
+
+Since $\beta_2$ is not eqaul to zero, we can expect the value to be higher than 0.05. The value is higher than 0.05 as we expected.

@@ -1,0 +1,449 @@
+---
+title: 'STAT 420: Homework 05'
+author: "Jung Hyun Hwang, jhwang52"
+date: 'Mar 3, 2020'
+output:
+  html_document:
+    theme: readable
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+## Exercise 1 (Using `lm`)
+
+For this exercise we will use the data stored in [`nutrition.csv`](nutrition.csv). It contains the nutritional values per serving size for a large variety of foods as calculated by the USDA. It is a cleaned version totaling 5,138 observations and is current as of September 2015.
+
+The variables in the dataset are:
+
+- `ID` 
+- `Desc` - Short description of food
+- `Water` - in grams
+- `Calories` 
+- `Protein` - in grams
+- `Fat` - in grams
+- `Carbs` - Carbohydrates, in grams
+- `Fiber` - in grams
+- `Sugar` - in grams
+- `Calcium` - in milligrams
+- `Potassium` - in milligrams
+- `Sodium` - in milligrams
+- `VitaminC` - Vitamin C, in milligrams
+- `Chol` - Cholesterol, in milligrams
+- `Portion` - Description of standard serving size used in analysis
+
+**(a)** Fit the following multiple linear regression model in `R`. Use `Calories` as the response and `Carbs`, `Fat`, and `Protein` as predictors.
+```{r}
+nutrition = read.csv("nutrition.csv")
+
+nutrition_model = lm(Calories ~Carbs + Fat + Protein, data = nutrition)
+null_nutrition_model <- lm(Calories ~ 1, data = nutrition)
+full_nutrition_model <- lm(Calories ~ Carbs + Fat + Protein, data = nutrition)
+```
+
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \epsilon_i.
+\]
+
+Here,
+
+- $Y_i$ is `Calories`.
+- $x_{i1}$ is `Carbs`.
+- $x_{i2}$ is `Fat`.
+- $x_{i3}$ is `Protein`.
+
+Use an $F$-test to test the significance of the regression. Report the following:
+ 
+- The null and alternative hypotheses
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.01$
+- A conclusion in the context of the problem
+
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+```{r}
+summary(nutrition_model)$coef
+```
+$H_0$ : $\beta_1$ = $\beta_2$ = $\beta_3$ = 0, vs 
+$H_1$ : At least one of predictors is not zero, $\beta_j$ $\not=$ 0, where j = 1, 2, 3
+
+```{r}
+anova(null_nutrition_model, full_nutrition_model)[2, 5]
+```
+
+The value of the test statistic is 152444.8
+
+```{r}
+anova(null_nutrition_model, full_nutrition_model)[2, 6]
+```
+
+The p-val of the test is 0.
+
+A statistical decision at $\alpha = 0.01$ is significant because p-val is less than the $\alpha$ value. This indicates that there is a strong evidendce to reject the null hypothesis and there is a linear relationship between response and at least one of predictors.
+
+Since this model is significant, there is an evidence that Calories have linear relationship with at least one of predictors which are Carbohydrates, Fat, and Protein.
+
+**(b)** Output only the estimated regression coefficients. Interpret all $\hat{\beta}_j$ coefficients in the context of the problem.
+```{r}
+summary(nutrition_model)$coef[ ,1]
+```
+
+Each coefficients, besides Intercept, represent that each additional amount in each categories increase that much of Calories. When Fat and Protein are held constant, each additional Carbs would increase 3.774 calories. When Carbs and Protein are held constant, each additional Fat would increase 8.804 of calories. When Carbs and Fat are held constant, each additional Protein would increase 3.967 calories. Intercept represent the calories when all three predictors are equal to 0.
+
+**(c)** Use your model to predict the amount of `Calories` in a Big Mac. According to [McDonald's publicized nutrition facts](http://nutrition.mcdonalds.com/getnutrition/nutritionfacts.pdf), the Big Mac contains 47g of carbohydrates, 28g of fat, and 25g of protein.
+```{r}
+new_data = data.frame(Carbs = 47, Fat = 28, Protein = 25)
+predict(nutrition_model, new_data)
+```
+
+The predicted amount of calories is 526.82
+
+**(d)** Calculate the standard deviation, $s_y$, for the observed values in the Calories variable. Report the value of $s_e$ from your multiple regression model. Interpret both estimates in the context of this problem.
+```{r}
+sd(nutrition$Calories)
+```
+```{r}
+summary(nutrition_model)$sigma
+```
+
+The value of $s_e$ from your multiple regression model is 18.891. While observed calories deviates from its mean by 179.244, calories deviates from the line of the model that we calculated based on three predictors, Carbs/Fat/Protein, by 18.891.
+
+
+**(e)** Report the value of $R^2$ for the model. Interpret its meaning in the context of the problem.
+```{r}
+summary(nutrition_model)$r.squared
+```
+
+This indicates that 98.89% of residuals can be explained by our model.
+
+**(f)** Calculate a 90% confidence interval for $\beta_2$. Give an interpretation of the interval in the context of the problem.
+```{r}
+confint(nutrition_model, interval = 'confidence', level = 0.9)[3, ]
+```
+Since $\beta_2$ is Fat in this model, we are 90% confident that each additional Fat would increase mean of calories by between 8.7789 and 8.9293 when rest of predictors are held constant.
+
+
+**(g)** Calculate a 95% confidence interval for $\beta_0$. Give an interpretation of the interval in the context of the problem.
+```{r}
+confint(nutrition_model, interval = 'confidence', level = 0.9)[1, ]
+```
+This indicates that when three predictors, Carbs/Fat/Protein in this model, are equal to 0, we are 95% confident that mean of calories would be between 2.9580 and 4.5781
+
+
+**(h)** Use a 99% confidence interval to estimate the mean Calorie content of a small order of McDonald's french fries that has 30g of carbohydrates, 11g of fat, and 2g of protein. Interpret the interval in context.
+```{r}
+new_data_2 = data.frame(Carbs = 30, Fat = 11, Protein = 2)
+predict(nutrition_model, newdata = new_data_2, interval = 'confidence', level = 0.99)
+```
+Based off given data, we are 99% sure that mean of calories would be between 220.8924 and 222.6195.
+
+ 
+**(i)** Use a 90% prediction interval to predict the Calorie content of new healthy menu item that has 11g of carbohydrates, 1.5g of fat, and 1g of protein. Interpret the interval in context.
+```{r}
+new_data_3 = data.frame(Carbs = 11, Fat = 1.5, Protein = 1)
+predict(nutrition_model, newdata = new_data_3, interval = 'prediction', level = 0.90)
+```
+Based off given data, we are 90% confident that predicted calories would be between 31.3649 and 93.5374..
+
+
+## Exercise 2 (More `lm`)
+
+For this exercise we will again use the nutrition data. 
+
+**(a)** Fit a model with Calories as the response and `Carbs`, `Sodium`, `Fat`, and `Protein` as predictors. Use an $F$-test to test the significance of the regression. Report the following:
+ 
+- The null and alternative hypotheses
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.01$
+- A conclusion in the context of the problem
+```{r}
+nutrition_model_2 = lm(Calories ~Carbs + Sodium + Fat + Protein, data = nutrition)
+
+null_nutrition_model_2 <- lm(Calories ~ 1, data = nutrition)
+full_nutrition_model_2 <- lm(Calories ~ Carbs + Sodium + Fat + Protein, data = nutrition)
+
+anova(null_nutrition_model_2, full_nutrition_model_2)
+```
+$H_0$ : $\beta_1$ = $\beta_2$ = $\beta_3$ = $\beta_4$ = 0, vs 
+$H_1$ : At least one of predictors is not zero, $\beta_j$ $\not=$ 0, where j = 1, 2, 3, 4
+
+```{r}
+anova(null_nutrition_model_2, full_nutrition_model_2)[2, 5]
+```
+The value of the test statistic is 114353.2
+
+
+```{r}
+anova(null_nutrition_model_2, full_nutrition_model_2)[2, 6]
+```
+The p-val of the test is 0.
+
+A statistical decision at $\alpha = 0.01$ is that this model is significant because p-val is much less than the $\alpha$. There is a strong evidence to reject the null hypothesis.
+
+There is a strong evidence that at least one of the predictors in this model, Carbs/Sodium/Fat/Protein, has significant relationship with calroies.
+
+**(b)** For each of the predictors in part **(a)**, perform a $t$-test for the significance of its regression coefficient. Report the following for each:
+ 
+- The null and alternative hypotheses
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.01$
+
+```{r}
+summary(nutrition_model_2)$coef
+```
+
+$H_0$ : $\beta_1$  = 0, vs $H_1$ : $\beta_1$  $\not=$ 0
+
+```{r}
+summary(nutrition_model_2)$coef[2, 3]
+```
+The value of the test statistic is 388.7173 for $\beta_1$.
+
+```{r}
+summary(nutrition_model_2)$coef[2, 4]
+```
+The p-val of the test is 0 for $\beta_1$.
+
+A statistical decision for $\beta_1$ at $\alpha = 0.01$ is significant because the p-val is much lower than $\alpha$.
+
+
+$H_0$ : $\beta_2$  = 0, vs $H_1$ : $\beta_2$  $\not=$ 0
+```{r}
+summary(nutrition_model_2)$coef[3, 3]
+```
+The value of the test statistic is 1.3628 for $\beta_2$.
+
+```{r}
+summary(nutrition_model_2)$coef[3, 4]
+```
+The p-val of the test is 0.1731 for $\beta_2$.
+
+A statistical decision for $\beta_2$ at $\alpha = 0.01$ is failing to reject the null hypothesis because the p-val is larger than $\alpha$.
+
+
+$H_0$ : $\beta_3$  = 0, vs $H_1$ : $\beta_3$  $\not=$ 0
+```{r}
+summary(nutrition_model_2)$coef[4, 3]
+```
+The value of the test statistic is 575.2617 for $\beta_3$.
+
+```{r}
+summary(nutrition_model_2)$coef[4, 4]
+```
+The p-val of the test is 0 for $\beta_3$.
+
+A statistical decision for $\beta_3$ at $\alpha = 0.01$ is significant because the p-val is much lower than $\alpha$.
+
+
+$H_0$ : $\beta_4$  = 0, vs $H_1$ : $\beta_4$  $\not=$ 0
+```{r}
+summary(nutrition_model_2)$coef[5, 3]
+```
+The value of the test statistic is 150.5334 for $\beta_4$.
+
+```{r}
+summary(nutrition_model_2)$coef[5, 4]
+```
+The p-val of the test is 0 for $\beta_4$.
+
+A statistical decision for $\beta_4$ at $\alpha = 0.01$ is significant because the p-val is much lower than $\alpha$.
+
+**(c)** Based on your results in part **(b)**, do you still prefer the model in part **(a)**, or is there instead a model with three predictors that you prefer? Briefly explain.
+
+Based on the results in part **(b)**, I prefer a model with three predictors only, which are Carbs/Fat/Protein because there is a evidence that sodium does not have a linear relationship with calories.
+
+
+## Exercise 3 (Comparing Models)
+
+For this exercise we will use the data stored in [`goalies_cleaned.csv`](goalies_cleaned.csv). It contains career data for 462 players in the National Hockey League who played goaltender at some point up to and including the 2014 - 2015 season. The variables in the dataset are:
+ 
+- `W` - Wins
+- `GA` - Goals Against
+- `SA` - Shots Against
+- `SV` - Saves
+- `SV_PCT` - Save Percentage
+- `GAA` - Goals Against Average
+- `SO` - Shutouts
+- `MIN` - Minutes
+- `PIM` - Penalties in Minutes
+ 
+**(a)** Fit a multiple linear regression model with Wins as the response and all other variables as the predictors.
+```{r}
+goalies = read.csv('goalies_cleaned.csv')
+
+goalies_model = lm(W ~., data = goalies)
+full_goalies_model = lm(W ~., data = goalies)
+null_goalies_model = lm(W ~1, data = goalies)
+
+anova(full_goalies_model, null_goalies_model)
+```
+
+ 
+Use an $F$-test to test the significance of the regression. Report the following:
+ 
+- The null and alternative hypotheses
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.10$
+- A conclusion in the context of the problem
+ 
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+
+$H_0$ : $\beta_1$ = $\beta_2$ = $\beta_3$ = $\beta_4$ = $\beta_5$ = $\beta_6$ = $\beta_7$ = $\beta_8$ =0 vs
+$H_1$ : At least of $\beta_j$ $\not=$ 0, j = 1, 2, 3,..., 8
+
+```{r}
+anova(full_goalies_model, null_goalies_model)[2, 5]
+```
+The value of the test statistic for this model is 3938.316.
+
+```{r}
+anova(full_goalies_model, null_goalies_model)[2, 6]
+```
+The p-val is 0.
+
+A statistical decision at $\alpha = 0.10$ is significant. There is
+a strong evidence to reject the null hypothesis, indicating that at least one of predictors has a linear relationship with the response.
+
+Since this model is significant, there is a strong evidence to say that Wins have a linear relationship with at least one of the predictors.
+
+**(b)** Calculate the RMSE of this full model. Report the residual standard error of this full model. What is the relationship of these two values?
+
+Recall, we have defined RMSE as,
+
+\[
+RMSE = \sqrt{\frac{1}{n} \sum_{i = 1}^{n}(y_i - \hat{y}_i)^2}.
+\]
+```{r}
+RMSE = sqrt(mean(resid(goalies_model) ^ 2))
+print(RMSE)
+```
+```{r}
+summary(goalies_model)$sigma
+```
+They both estimate $\sigma$. While RMSE is biased, RSE is not biased.
+
+**(c)** Fit a model with Wins as the response and with Goals Against, Goals Against Average, Saves, and Save Percentage as the predictors. Calculate the RMSE of this model.
+```{r}
+goalie_model_2 = lm(W ~GA + GAA + SV + SV_PCT, data = goalies)
+
+RMSE_2 = sqrt(mean(resid(goalie_model_2) ^ 2))
+print(RMSE_2)
+```
+The RMSE for this model is 25.1224.
+
+
+**(d)** Fit a model with Wins as the response and with Goals Against Average and Save Percentage as the predictors. Calculate the RMSE of this model.
+```{r}
+goalie_model_3 = lm(W ~GAA + SV_PCT, data = goalies)
+
+RMSE_3 = sqrt(mean(resid(goalie_model_3) ^ 2))
+print(RMSE_3)
+```
+The RMSE for this model is 102.8307.
+
+
+**(e)** Based on the previous three models, which model is most helpful for predicting wins? Briefly explain.
+
+The full model is the most helpful for predicting wins because this model has the lowest RMSE.
+
+
+**(f)** Conduct an ANOVA $F$-test comparing the models in parts **(c)** and **(d)**. Report the following:
+```{r}
+anova(goalie_model_2, goalie_model_3)
+```
+ 
+- The null and alternative hypotheses
+- The value of the test statistic
+- The p-value of the test
+- A statistical decision at $\alpha = 0.10$
+- A conclusion in the context of the problem
+ 
+When reporting these, you should explicitly state them in your document, not assume that a reader will find and interpret them from a large block of `R` output.
+
+$H_0$ : $\beta_{GA}$ = $\beta_{SV}$ = 0 vs
+$H_1$ : At least one of $\beta_{GA}$ and $\beta_{SV}$ $\not=$ 0
+
+```{r}
+anova(goalie_model_2, goalie_model_3)[2, 5]
+```
+The value of the test statistic is 3599.842.
+
+```{r}
+anova(goalie_model_2, goalie_model_3)[2, 6]
+```
+The p-val is 1.9389 * $10^{-280}$.
+
+A statistical decision at $\alpha = 0.10$ is significant. There is a strong evidence to reject the null hypothesis.
+
+Since there is a strong evidence to reject the null hypothesis, it is better to have at least one of GA, SV as a predictor to predict wins. There is a linear relationship between wins and at least one of GA, SV.
+
+## Exercise 4 (Regression without `lm`)
+
+For this exercise use the `prostate` dataset from the `faraway` package. Use `?prosate` to learn about the dataset. The goal of this exercise is to fit a model with `lpsa` as the response and the remaining variables as predictors.
+```{r}
+library(faraway)
+
+prostate_model = lm(lpsa ~., data = prostate)
+```
+
+
+**(a)** Obtain the estimated regression coefficients **without** the use of `lm()` or any other built-in functions for regression. That is, you should use only matrix operations. Store the results in a vector `beta_hat_no_lm`. To ensure this is a vector, you may need to use `as.vector()`. Return this vector as well as the results of `sum(beta_hat_no_lm)`.
+
+```{r}
+n = nrow(prostate)
+p = length(coef(prostate_model))
+X = cbind(rep(1, n), as.matrix(prostate[ ,-9]))
+y = prostate$lpsa
+
+beta_hat_no_lm = as.vector(solve(t(X) %*% X) %*% t(X) %*% y)
+sum(beta_hat_no_lm)
+```
+
+
+**(b)** Obtain the estimated regression coefficients **with** the use of `lm()`. Store the results in a vector `beta_hat_lm`. To ensure this is a vector, you may need to use `as.vector()`. Return this vector as well as the results of `sum(beta_hat_lm)`.
+```{r}
+beta_hat_lm = as.vector(coef(prostate_model))
+sum(beta_hat_lm)
+```
+
+
+**(c)** Use the `all.equal()` function to verify that the results are the same. You may need to remove the names of one of the vectors. The `as.vector()` function will do this as a side effect, or you can directly use `unname()`.
+```{r}
+all.equal(beta_hat_no_lm, beta_hat_lm)
+```
+
+
+**(d)** Calculate $s_e$ without the use of `lm()`. That is, continue with your results from **(a)** and perform additional matrix operations to obtain the result. Output this result. Also, verify that this result is the same as the result obtained from `lm()`.
+```{r}
+y_hat = X %*% beta_hat_no_lm;
+
+e = y - y_hat;
+s_e_2 = (t(e) %*% e) / (n-p)
+s_e = sqrt(s_e_2)[1, 1]
+s_e
+```
+
+```{r}
+s_e_lm = summary(prostate_model)$sigma
+all.equal(s_e, s_e_lm)
+```
+
+
+**(e)** Calculate $R^2$ without the use of `lm()`. That is, continue with your results from **(a)** and **(d)** and perform additional operations to obtain the result. Output this result. Also, verify that this result is the same as the result obtained from `lm()`.
+```{r}
+SSReg = sum((y_hat - mean(y))^2);
+SST = sum((y - mean(y))^2);
+r_2 = SSReg / SST;
+r_2
+```
+
+```{r}
+r_2_lm = summary(prostate_model)$r.squared
+all.equal(r_2, r_2_lm)
+```
+
+

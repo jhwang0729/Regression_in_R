@@ -1,0 +1,692 @@
+---
+title: 'STAT 420: Simulation Project'
+author: "Jung Hyun Hwang, jhwang52"
+date: 'March 13'
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80)
+library(knitr)
+opts_chunk$set(cache = TRUE, autodep = TRUE)
+```
+
+# Simulation Study 1: Significance of Regression
+
+In this simulation study we will investigate the significance of regression test. We will simulate from two different models:
+
+1. The **"significant"** model
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$ and
+
+- $\beta_0 = 3$,
+- $\beta_1 = 1$,
+- $\beta_2 = 1$,
+- $\beta_3 = 1$.
+
+
+2. The **"non-significant"** model
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$ and
+
+- $\beta_0 = 3$,
+- $\beta_1 = 0$,
+- $\beta_2 = 0$,
+- $\beta_3 = 0$.
+
+For both, we will consider a sample size of $25$ and three possible levels of noise. That is, three values of $\sigma$.
+
+- $n = 25$
+- $\sigma \in (1, 5, 10)$
+
+Use simulation to obtain an empirical distribution for each of the following values, for each of the three values of $\sigma$, for both models.
+
+- The **$F$ statistic** for the significance of regression test.
+- The **p-value** for the significance of regression test
+- **$R^2$**
+
+For each model and $\sigma$ combination, use $2500$ simulations. For each simulation, fit a regression model of the same form used to perform the simulation.
+
+Use the data found in [`study_1.csv`](study_1.csv) for the values of the predictors. These should be kept constant for the entirety of this study. The `y` values in this data are a blank placeholder.
+
+Done correctly, you will have simulated the `y` vector $2 (models)×3 (sigmas)×2500 (sims)=15000$ times.
+
+Potential discussions:
+
+- Do we know the true distribution of any of these values?
+- How do the empirical distributions from the simulations compare to the true distributions? (You could consider adding a curve for the true distributions if you know them.)
+- How are $R^2$ and $\sigma$ related? Is the relationship the same for the significant and non-significant models?
+
+Additional things to consider:
+
+- Organize the plots in a grid for easy comparison.
+
+**Introduction**
+
+Through the study 1, I am going to investigate the significance of regression test by comparing two different models with a given data set, where one model is "significant" model with three predictors, and the other model is "non-significant" model.
+
+While both model follows the form of
+
+$Y_i = \beta_0 + \beta_1x_{i1} + \beta_2x_{i2} + \beta_3x_{i3} + e_i$
+
+where $e_i \sim N(0, \sigma^2)$,
+
+"significant" model have
+
+$\beta_0 = 3$ and $\beta_1$ = $\beta_2$ = $\beta_3$
+ = 1,
+
+"non-significant" model have
+
+$\beta_0 = 3$ and $\beta_1$ = $\beta_2$ = $\beta_3$ = 0
+
+In order to do this, I am interested in three values, which are $F$ statistic, p-value, and $R^2$. I am going to simulate each models with different values of sigma, 1, 5, and 10. I am also going to simulate each models 2500 times.
+
+**Methods**
+
+```{r}
+birthday = 19960729
+set.seed(birthday)
+```
+
+```{r}
+library(broom)
+
+study_1 = read.csv("~/Desktop/STAT420HW/simproj_jhwang52/study_1.csv", header=TRUE)
+```
+
+```{r}
+n = 25
+num_sims = 2500
+sigma = 1
+
+beta_0 = 3
+beta_1 = 1
+beta_2 = 1
+beta_3 = 1
+
+f_val_1 = rep(0, num_sims)
+p_val_1 = rep(0, num_sims)
+r_sq_1 = rep(0, num_sims)
+
+for(i in 1:num_sims) {
+  eps = rnorm(n, mean = 0, sigma)
+  study_1$y = beta_0 + beta_1 * study_1$x1 + beta_2 * study_1$x2 + beta_3 * study_1$x3 + eps
+  fit = lm(y ~., data = study_1)
+  f_val_1[i] = summary(fit)$fstatistic[1]
+  p_val_1[i] = glance(fit)$p.value
+  r_sq_1[i] = summary(fit)$r.squared[1]
+}
+sig_model_1 = c(mean(f_val_1), mean(p_val_1), mean(r_sq_1))
+```
+
+```{r}
+n = 25
+num_sims = 2500
+sigma = 5
+
+beta_0 = 3
+beta_1 = 1
+beta_2 = 1
+beta_3 = 1
+
+f_val_2 = rep(0, num_sims)
+p_val_2 = rep(0, num_sims)
+r_sq_2 = rep(0, num_sims)
+
+for(i in 1:num_sims) {
+  eps = rnorm(n, mean = 0, sigma)
+  study_1$y = beta_0 + beta_1 * study_1$x1 + beta_2 * study_1$x2 + beta_3 * study_1$x3 + eps
+  fit = lm(y ~., data = study_1)
+  f_val_2[i] = summary(fit)$fstatistic[1]
+  p_val_2[i] = glance(fit)$p.value
+  r_sq_2[i] = summary(fit)$r.squared[1]
+}
+sig_model_2 = c(mean(f_val_2), mean(p_val_2), mean(r_sq_2))
+```
+
+```{r}
+n = 25
+num_sims = 2500
+sigma = 10
+
+beta_0 = 3
+beta_1 = 1
+beta_2 = 1
+beta_3 = 1
+
+f_val_3 = rep(0, num_sims)
+p_val_3 = rep(0, num_sims)
+r_sq_3 = rep(0, num_sims)
+
+for(i in 1:num_sims) {
+  eps = rnorm(n, mean = 0, sigma)
+  study_1$y = beta_0 + beta_1 * study_1$x1 + beta_2 * study_1$x2 + beta_3 * study_1$x3 + eps
+  fit = lm(y ~., data = study_1)
+  f_val_3[i] = summary(fit)$fstatistic[1]
+  p_val_3[i] = glance(fit)$p.value
+  r_sq_3[i] = summary(fit)$r.squared[1]
+}
+sig_model_3 = c(mean(f_val_3), mean(p_val_3), mean(r_sq_3))
+```
+
+```{r}
+n = 25
+num_sims = 2500
+sigma = 1
+
+beta_0 = 3
+beta_1 = 0
+beta_2 = 0
+beta_3 = 0
+
+f_val_4 = rep(0, num_sims)
+p_val_4 = rep(0, num_sims)
+r_sq_4 = rep(0, num_sims)
+
+for(i in 1:num_sims) {
+  eps = rnorm(n, mean = 0, sigma)
+  study_1$y = beta_0 + beta_1 * study_1$x1 + beta_2 * study_1$x2 + beta_3 * study_1$x3 + eps
+  fit = lm(y ~., data = study_1)
+  f_val_4[i] = summary(fit)$fstatistic[1]
+  p_val_4[i] = glance(fit)$p.value
+  r_sq_4[i] = summary(fit)$r.squared[1]
+}
+non_sig_model_1 = c(mean(f_val_4), mean(p_val_4), mean(r_sq_4))
+```
+
+```{r}
+n = 25
+num_sims = 2500
+sigma = 5
+
+beta_0 = 3
+beta_1 = 0
+beta_2 = 0
+beta_3 = 0
+
+f_val_5 = rep(0, num_sims)
+p_val_5 = rep(0, num_sims)
+r_sq_5 = rep(0, num_sims)
+
+for(i in 1:num_sims) {
+  eps = rnorm(n, mean = 0, sigma)
+  study_1$y = beta_0 + beta_1 * study_1$x1 + beta_2 * study_1$x2 + beta_3 * study_1$x3 + eps
+  fit = lm(y ~., data = study_1)
+  f_val_5[i] = summary(fit)$fstatistic[1]
+  p_val_5[i] = glance(fit)$p.value
+  r_sq_5[i] = summary(fit)$r.squared[1]
+}
+non_sig_model_2 = c(mean(f_val_5), mean(p_val_5), mean(r_sq_5))
+```
+
+```{r}
+n = 25
+num_sims = 2500
+sigma = 10
+
+beta_0 = 3
+beta_1 = 0
+beta_2 = 0
+beta_3 = 0
+
+f_val_6 = rep(0, num_sims)
+p_val_6 = rep(0, num_sims)
+r_sq_6 = rep(0, num_sims)
+
+for(i in 1:num_sims) {
+  eps = rnorm(n, mean = 0, sigma)
+  study_1$y = beta_0 + beta_1 * study_1$x1 + beta_2 * study_1$x2 + beta_3 * study_1$x3 + eps
+  fit = lm(y ~., data = study_1)
+  f_val_6[i] = summary(fit)$fstatistic[1]
+  p_val_6[i] = glance(fit)$p.value
+  r_sq_6[i] = summary(fit)$r.squared[1]
+}
+non_sig_model_3 = c(mean(f_val_6), mean(p_val_6), mean(r_sq_6))
+```
+
+```{r}
+values = cbind(sig_model_1, sig_model_2, sig_model_3,   non_sig_model_1, non_sig_model_2, non_sig_model_3)
+```
+
+**Results**
+
+```{r}
+rownames(values) = c("f-value", "p-value", "r_squared")
+values
+```
+
+These are the values that I got from running 2500 times of simulation with each models with different sigma values. 
+
+```{r}
+par(mfrow = c(1,2))
+hist(f_val_1,
+     main = "Significant model with sig = 1",
+     xlab = "F Statistic",
+     prob = TRUE
+     )
+x = f_val_1
+curve( df(x, df1 = 3, df2 = 2497), col = "darkorange", add = TRUE, lwd = 3)
+
+hist(f_val_4,
+     main = "Non-Significant model with sig = 1",
+     xlab = "F Statistic",
+     prob = TRUE
+     )
+x = f_val_4
+curve( df(x, df1 = 3, df2 = 2497), col = "darkorange", add = TRUE, lwd = 3);
+
+par(mfrow = c(1,2))
+hist(f_val_2,
+     main = "Significant model with sig = 5",
+     xlab = "F Statistic",
+     prob = TRUE
+     )
+x = f_val_2
+curve( df(x, df1 = 3, df2 = 2497), col = "darkorange", add = TRUE, lwd = 3)
+
+hist(f_val_5,
+     main = "Non-Significant model with sig = 5",
+     xlab = "F Statistic",
+     prob = TRUE
+     )
+x = f_val_5
+curve( df(x, df1 = 3, df2 = 2497), col = "darkorange", add = TRUE, lwd = 3);
+
+par(mfrow = c(1,2))
+hist(f_val_3,
+     main = "Significant model with sig = 10",
+     xlab = "F Statistic",
+     prob = TRUE
+     )
+x = f_val_3
+curve( df(x, df1 = 3, df2 = 2497), col = "darkorange", add = TRUE, lwd = 3);
+
+hist(f_val_6,
+     main = "Non-Significant model with sig = 10",
+     xlab = "F Statistic",
+     prob = TRUE
+     )
+x = f_val_6
+curve( df(x, df1 = 3, df2 = 2497), col = "darkorange", add = TRUE, lwd = 3)
+```
+
+```{r}
+par(mfrow = c(1,2))
+hist(p_val_1,
+     main = "Significant model with sig = 1",
+     xlab = "P Value",
+     border = "blue",
+     prob = TRUE
+     )
+
+hist(p_val_4,
+     main = "Non-Significant model with sig = 1",
+     xlab = "P Value",
+     border = "blue",
+     prob = TRUE
+     )
+
+par(mfrow = c(1,2))
+hist(p_val_2,
+     main = "Significant model with sig = 5",
+     xlab = "P Value",
+     border = "blue",
+     prob = TRUE
+     )
+
+hist(p_val_5,
+     main = "Non-Significant model with sig = 5",
+     xlab = "P Value",
+     border = "blue",
+     prob = TRUE
+     )
+
+par(mfrow = c(1,2))
+hist(p_val_3,
+     main = "Significant model with sig = 10",
+     xlab = "P Value",
+     border = "blue",
+     prob = TRUE
+     )
+
+hist(p_val_6,
+     main = "Non-Significant model with sig = 10",
+     xlab = "P Value",
+     border = "blue",
+     prob = TRUE
+     )
+```
+
+```{r}
+par(mfrow = c(1,2))
+hist(r_sq_1,
+     main = "Significant model with sig = 1",
+     xlab = "R^2",
+     border = "blue",
+     prob = TRUE
+     )
+
+hist(r_sq_4,
+     main = "Non-Significant model with sig = 1",
+     xlab = "R^2",
+     border = "blue",
+     prob = TRUE
+     )
+
+par(mfrow = c(1,2))
+hist(r_sq_2,
+     main = "Significant model with sig = 5",
+     xlab = "R^2",
+     border = "blue",
+     prob = TRUE
+     )
+
+hist(r_sq_5,
+     main = "Non-Significant model with sig = 5",
+     xlab = "R^2",
+     border = "blue",
+     prob = TRUE
+     )
+
+par(mfrow = c(1,2))
+hist(r_sq_3,
+     main = "Significant model with sig = 10",
+     xlab = "R^2",
+     border = "blue",
+     prob = TRUE
+     )
+
+hist(r_sq_6,
+     main = "Non-Significant model with sig = 10",
+     xlab = "R^2",
+     border = "blue",
+     prob = TRUE
+     )
+```
+
+**Discussion**
+
+### F Statistic
+
+In order to find out how "good" our models follow a true F distribution, I added a curve to my histogram. Although "non-significant" models do not exactly follow the true F distribution, they quite match well with the true distribution curve that I added across all sigma values. 
+
+While "non-significant" models follow the F distribution quite well in general, "significant" models do not exactly follow the true distribution as $\sigma$ value decreases. This is true especially when $\sigma$ = 1. This indicates that "significant" model is significant when $\sigma$ = 1 because it does not follow its distribution.
+
+### p-val
+
+The p-value histograms of "non-significant" follow an uniform distribution quite well across all sigma values. Although they do not follow the uniform distribution exactly, this is possible due to chances because they are just sligtly off by uniform distribution.
+
+The "significant" models do not follow uniform distribution. However, they seem to follow the uniform distribution as $\sigma$ value increases. 
+
+### R^2
+
+I would consider R^2 to be one of the most important factor when evaluating how "good" my regression model is becuase R^2 shows how much error is explained by the model.
+
+By looking at the results of "significant" models, it is quite clear to see that most of errors are explained by our models when $\sigma$ is relatively low. In case of $\sigma$ = 1, R^2 values for "significant" model follow the normal distribution quite well with center at approximately 0.85. This indicates that this model is pretty "good". However, R^2 values decrease as $\sigma$ value increases. This is reasonable because $\sigma$ is the level of noise. As the level of noise increases, it is quite hard to predict outcomes.
+
+The "significant" model with $\sigma$ = 1 seem to follow the normal distribution as I mentioned earlier, but it is left skewed. Also the "significant" model with $\sigma$ = 5 seem to follow normal distribution, but it is right skewed in this case. I, however, can't really identify empirical distribution of "significant" model with $\sigma$ = 10 and "non-significant" models across all sigma values. They seem to follow normal distribution, but they are extremely right skewed.
+
+### In General
+
+It is quite hard to say that we know the true distribution of any of these values just by looking at empirical distribution. However, there is a strong evidence that empirical distribution is the true distribution because I have run many simulations. Although there is a chance that empirical distribution is not the true distribution, I am confident that empirical distribution I identified previously is the true distribution.
+
+# Simulation Study 2: Using RMSE for Selection?
+
+In homework we saw how Test RMSE can be used to select the “best” model. In this simulation study we will investigate how well this procedure works. Since splitting the data is random, we don’t expect it to work correctly each time. We could get unlucky. But averaged over many attempts, we should expect it to select the appropriate model.
+
+We will simulate from the model
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \beta_4 x_{i4} + \beta_5 x_{i5} + \beta_6 x_{i6} + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$ and
+
+- $\beta_0 = 0$,
+- $\beta_1 = -5$,
+- $\beta_2 = 4$,
+- $\beta_3 = 1.6$,
+- $\beta_4 = -1.1$,
+- $\beta_5 = 0.7$,
+- $\beta_6 = 0.3$.
+
+We will consider a sample size of $500$ and three possible levels of noise. That is, three values of $\sigma$.
+
+- $n = 500$
+- $\sigma \in (1, 2, 4)$
+
+Use the data found in [`study_2.csv`](study_2.csv) for the values of the predictors. These should be kept constant for the entirety of this study. The `y` values in this data are a blank placeholder.
+
+Each time you simulate the data, randomly split the data into train and test sets of equal sizes (250 observations for training, 250 observations for testing).
+
+For each, fit **nine** models, with forms:
+
+- `y ~ x1`
+- `y ~ x1 + x2`
+- `y ~ x1 + x2 + x3`
+- `y ~ x1 + x2 + x3 + x4`
+- `y ~ x1 + x2 + x3 + x4 + x5`
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6`, the correct form of the model as noted above
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7`
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8`
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9`
+
+For each model, calculate Train and Test RMSE.
+
+\[
+\text{RMSE}(\text{model, data}) = \sqrt{\frac{1}{n} \sum_{i = 1}^{n}(y_i - \hat{y}_i)^2}
+\]
+
+Repeat this process with $1000$ simulations for each of the $3$ values of $\sigma$. For each value of $\sigma$, create a plot that shows how average Train RMSE and average Test RMSE changes as a function of model size. Also show the number of times the model of each size was chosen for each value of $\sigma$.
+
+Done correctly, you will have simulated the $y$ vector $3×1000=3000$ times. You will have fit $9×3×1000=27000$ models. A minimal result would use $3$ plots. Additional plots may also be useful.
+
+Potential discussions:
+
+- Does the method **always** select the correct model? On average, does is select the correct model?
+- How does the level of noise affect the results?
+
+
+
+**Introduction**
+
+Through out the study 2, I am going to compare models with different numbers of predictors. While there are several ways to pick the best model, I will choose a model with lowest RMSE.
+
+A given model is
+
+Model:
+$Y_i = \beta_0 + \beta_1x_{i1} + \beta_2x_{i2} + \beta_3x_{i3} + \beta_3x_{i3} + \beta_4x_{i4} + \beta_5x_{i5} + \beta_6x_{i6} + e_i$
+
+where 
+
+$e_i \sim N(0, \sigma^2)$
+
+with
+
+$\beta_0 = 0$
+
+$\beta_1 = 5$
+
+$\beta_2 = -4$
+
+$\beta_3 = 1.6$
+
+$\beta_4 = -1.1$
+
+$\beta_5 = 0.7$
+
+$\beta_6 = 0.3$
+
+Choosing a model that has lowest RMSE seems reasonable, but it is important to note that models with more predictors will have lower RMSE. For this reason, I will be considering number of predictors as well.
+
+I will have 9 models in total. One model has 9 predictors, and other models will keep losing one predictors. I am also going to divide a data set into two different groups. One will be used for training, and the other one will be using for testing.
+
+At the end, I will come up with the best model and explain why I chose the model.
+
+**Methods**
+
+```{r}
+birthday = 19960729
+set.seed(birthday)
+```
+
+```{r}
+study_2 = read.csv("~/Desktop/STAT420HW/simproj_jhwang52/study_2.csv")
+
+beta_0 = 0
+beta_1 = -5
+beta_2 = 4
+beta_3 = 1.6
+beta_4 = -1.1
+beta_5 = 0.7
+beta_6 = 0.3
+
+sigma_2 = c(1, 2, 4)
+num_sims_2 = 1000
+
+rmse = function(observed, predicted) {
+  sqrt(mean((observed - predicted) ^ 2))
+}
+
+train_error_1 = data.frame("model_1" = rep(0, num_sims_2), "model_2" = rep(0, num_sims_2), "model_3" = rep(0, num_sims_2), "model_4" = rep(0, num_sims_2), "model_5" = rep(0, num_sims_2), "model_6" = rep(0, num_sims_2), "model_7" = rep(0, num_sims_2), "model_8" = rep(0, num_sims_2), "model_9" = rep(0, num_sims_2))
+
+train_error_2 = data.frame("model_1" = rep(0, num_sims_2), "model_2" = rep(0, num_sims_2), "model_3" = rep(0, num_sims_2), "model_4" = rep(0, num_sims_2), "model_5" = rep(0, num_sims_2), "model_6" = rep(0, num_sims_2), "model_7" = rep(0, num_sims_2), "model_8" = rep(0, num_sims_2), "model_9" = rep(0, num_sims_2))
+
+train_error_3 = data.frame("model_1" = rep(0, num_sims_2), "model_2" = rep(0, num_sims_2), "model_3" = rep(0, num_sims_2), "model_4" = rep(0, num_sims_2), "model_5" = rep(0, num_sims_2), "model_6" = rep(0, num_sims_2), "model_7" = rep(0, num_sims_2), "model_8" = rep(0, num_sims_2), "model_9" = rep(0, num_sims_2))
+
+test_error_1 = data.frame("model_1" = rep(0, num_sims_2), "model_2" = rep(0, num_sims_2), "model_3" = rep(0, num_sims_2), "model_4" = rep(0, num_sims_2), "model_5" = rep(0, num_sims_2), "model_6" = rep(0, num_sims_2), "model_7" = rep(0, num_sims_2), "model_8" = rep(0, num_sims_2), "model_9" = rep(0, num_sims_2))
+
+test_error_2 = data.frame("model_1" = rep(0, num_sims_2), "model_2" = rep(0, num_sims_2), "model_3" = rep(0, num_sims_2), "model_4" = rep(0, num_sims_2), "model_5" = rep(0, num_sims_2), "model_6" = rep(0, num_sims_2), "model_7" = rep(0, num_sims_2), "model_8" = rep(0, num_sims_2), "model_9" = rep(0, num_sims_2))
+
+test_error_3 = data.frame("model_1" = rep(0, num_sims_2), "model_2" = rep(0, num_sims_2), "model_3" = rep(0, num_sims_2), "model_4" = rep(0, num_sims_2), "model_5" = rep(0, num_sims_2), "model_6" = rep(0, num_sims_2), "model_7" = rep(0, num_sims_2), "model_8" = rep(0, num_sims_2), "model_9" = rep(0, num_sims_2))
+```
+
+```{r}
+for(sig in 1:length(sigma_2)) {
+  for(i in 1:num_sims_2) {
+  
+    eps = rnorm(n, mean = 0, sd = sigma_2[sig]);
+    
+    y = beta_0 + beta_1 * study_2["x1"] + beta_2 * study_2["x2"] + beta_3 * study_2["x3"] + beta_4 * study_2["x4"] + beta_5 * study_2["x5"] + beta_6 * study_2["x6"] + eps
+    study_2$y = as.vector(y)[,1]
+    
+    study_index = sample(1 : nrow(study_2), 250)
+    train_data = study_2[study_index, ]
+    test_data = study_2[-study_index, ]
+    
+    model_1 = lm(y ~ x1, data = train_data);
+    model_2 = lm(y ~ x1 + x2, data = train_data);
+    model_3 = lm(y ~ x1 + x2 + x3, data = train_data);
+    model_4 = lm(y ~ x1 + x2 + x3 + x4, data = train_data);
+    model_5 = lm(y ~ x1 + x2 + x3 + x4 + x5, data = train_data);
+    model_6 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6, data = train_data);
+    model_7 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7, data = train_data);
+    model_8 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, data = train_data);
+    model_9 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, data = train_data);
+    
+    if(sig == 1) {
+      train_error_1[i, "model_1"] = rmse(train_data$y, predict.lm(model_1, train_data))
+      train_error_1[i, "model_2"] = rmse(train_data$y, predict.lm(model_2, train_data))
+      train_error_1[i, "model_3"] = rmse(train_data$y, predict.lm(model_3, train_data))
+      train_error_1[i, "model_4"] = rmse(train_data$y, predict.lm(model_4, train_data))
+      train_error_1[i, "model_5"] = rmse(train_data$y, predict.lm(model_5, train_data))
+      train_error_1[i, "model_6"] = rmse(train_data$y, predict.lm(model_6, train_data))
+      train_error_1[i, "model_7"] = rmse(train_data$y, predict.lm(model_7, train_data))
+      train_error_1[i, "model_8"] = rmse(train_data$y, predict.lm(model_8, train_data))
+      train_error_1[i, "model_9"] = rmse(train_data$y, predict.lm(model_9, train_data))
+      
+      test_error_1[i, "model_1"] = rmse(test_data$y, predict.lm(model_1, test_data))
+      test_error_1[i, "model_2"] = rmse(test_data$y, predict.lm(model_2, test_data))
+      test_error_1[i, "model_3"] = rmse(test_data$y, predict.lm(model_3, test_data))
+      test_error_1[i, "model_4"] = rmse(test_data$y, predict.lm(model_4, test_data))
+      test_error_1[i, "model_5"] = rmse(test_data$y, predict.lm(model_5, test_data))
+      test_error_1[i, "model_6"] = rmse(test_data$y, predict.lm(model_6, test_data))
+      test_error_1[i, "model_7"] = rmse(test_data$y, predict.lm(model_7, test_data))
+      test_error_1[i, "model_8"] = rmse(test_data$y, predict.lm(model_8, test_data))
+      test_error_1[i, "model_9"] = rmse(test_data$y, predict.lm(model_9, test_data))
+      
+    } else if (sig == 2) {
+      train_error_2[i, "model_1"] = rmse(train_data$y, predict.lm(model_1, train_data))
+      train_error_2[i, "model_2"] = rmse(train_data$y, predict.lm(model_2, train_data))
+      train_error_2[i, "model_3"] = rmse(train_data$y, predict.lm(model_3, train_data))
+      train_error_2[i, "model_4"] = rmse(train_data$y, predict.lm(model_4, train_data))
+      train_error_2[i, "model_5"] = rmse(train_data$y, predict.lm(model_5, train_data))
+      train_error_2[i, "model_6"] = rmse(train_data$y, predict.lm(model_6, train_data))
+      train_error_2[i, "model_7"] = rmse(train_data$y, predict.lm(model_7, train_data))
+      train_error_2[i, "model_8"] = rmse(train_data$y, predict.lm(model_8, train_data))
+      train_error_2[i, "model_9"] = rmse(train_data$y, predict.lm(model_9, train_data))
+      
+      test_error_2[i, "model_1"] = rmse(test_data$y, predict.lm(model_1, test_data))
+      test_error_2[i, "model_2"] = rmse(test_data$y, predict.lm(model_2, test_data))
+      test_error_2[i, "model_3"] = rmse(test_data$y, predict.lm(model_3, test_data))
+      test_error_2[i, "model_4"] = rmse(test_data$y, predict.lm(model_4, test_data))
+      test_error_2[i, "model_5"] = rmse(test_data$y, predict.lm(model_5, test_data))
+      test_error_2[i, "model_6"] = rmse(test_data$y, predict.lm(model_6, test_data))
+      test_error_2[i, "model_7"] = rmse(test_data$y, predict.lm(model_7, test_data))
+      test_error_2[i, "model_8"] = rmse(test_data$y, predict.lm(model_8, test_data))
+      test_error_2[i, "model_9"] = rmse(test_data$y, predict.lm(model_9, test_data))
+      
+    } else if (sig == 3) {
+      train_error_3[i, "model_1"] = rmse(train_data$y, predict.lm(model_1, train_data))
+      train_error_3[i, "model_2"] = rmse(train_data$y, predict.lm(model_2, train_data))
+      train_error_3[i, "model_3"] = rmse(train_data$y, predict.lm(model_3, train_data))
+      train_error_3[i, "model_4"] = rmse(train_data$y, predict.lm(model_4, train_data))
+      train_error_3[i, "model_5"] = rmse(train_data$y, predict.lm(model_5, train_data))
+      train_error_3[i, "model_6"] = rmse(train_data$y, predict.lm(model_6, train_data))
+      train_error_3[i, "model_7"] = rmse(train_data$y, predict.lm(model_7, train_data))
+      train_error_3[i, "model_8"] = rmse(train_data$y, predict.lm(model_8, train_data))
+      train_error_3[i, "model_9"] = rmse(train_data$y, predict.lm(model_9, train_data))
+      
+      test_error_3[i, "model_1"] = rmse(test_data$y, predict.lm(model_1, test_data))
+      test_error_3[i, "model_2"] = rmse(test_data$y, predict.lm(model_2, test_data))
+      test_error_3[i, "model_3"] = rmse(test_data$y, predict.lm(model_3, test_data))
+      test_error_3[i, "model_4"] = rmse(test_data$y, predict.lm(model_4, test_data))
+      test_error_3[i, "model_5"] = rmse(test_data$y, predict.lm(model_5, test_data))
+      test_error_3[i, "model_6"] = rmse(test_data$y, predict.lm(model_6, test_data))
+      test_error_3[i, "model_7"] = rmse(test_data$y, predict.lm(model_7, test_data))
+      test_error_3[i, "model_8"] = rmse(test_data$y, predict.lm(model_8, test_data))
+      test_error_3[i, "model_9"] = rmse(test_data$y, predict.lm(model_9, test_data))
+    }
+  }
+}
+```
+
+**Results**
+
+```{r}
+barplot(table(colnames(test_error_1)[apply(test_error_1, 1, which.min)]),
+  xlab = "Models",
+  main = "Frequency of lowest RMSE when Sigma = 1",
+  col = "darkorange")
+
+barplot(table(colnames(test_error_2)[apply(test_error_2, 1, which.min)]),
+  xlab = "Models",
+  main = "Frequency of lowest RMSE when Sigma = 2",
+  col = "darkorange")
+
+barplot(table(colnames(test_error_3)[apply(test_error_3, 1 ,which.min)]),
+  xlab = "Models",
+  main = "Frequency of lowest RMSE when Sigma = 4",
+  col = "darkorange")
+```
+
+**Discussion**
+
+By looking at the results that I got, I will select the model 6 to be the "best" model. Compared to other models, model 6 has significantly higher frequency of lowest RMSE when $\sigma$ = 1, 2, and still relatively high when $\sigma$ = 4. For these reasons, model 6 seems reasonable to be picked as the "best" model in this case.
+
+While this method, selecting a model that has the lowest RMSE, is usually a good way to select the correct model, there are a couple of problems. As I mentioned earlier, models with more predictors tend to have lower RMSE. This is why we need to be careful when we are selecting a correct model. We need to consider RMSE and number of predictors at the same time.
+
+Another issue with this method is that when $\sigma$, the level of noise, is high, it is quite hard to come up with a correct model. This is happened to our models as well. When model 6 has significantly higher frequency of lowest RMSE, other models have similar frequency of lowest RMSE as $\sigma$, the level of noise, increases. So as the level of noise increases, chance of "non-correct" models have lowest RMSE increases.
